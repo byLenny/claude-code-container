@@ -72,8 +72,9 @@ if [ "$AUTHENTICATED" -eq 0 ]; then
     #   - from the host:                                         #
     #       docker exec -it claude-dev sudo -u dev claude        #
     #       then run /login inside it and accept workspace trust.#
-    #   - or, if TTYD_TOKEN is set in .env, from a browser at    #
-    #       http://<host>:7681 (see SETUP.md)                    #
+    #   - or, if TTYD_TOKEN is set in .env, from the browser     #
+    #       terminal at http://<host>:7681 (see SETUP.md), then  #
+    #       run `claude` and /login inside it                    #
     #                                                            #
     #  After that, this container will authenticate               #
     #  automatically on every future start/restart.               #
@@ -84,8 +85,8 @@ else
     echo "    Found persisted login — sessions will authenticate automatically."
 fi
 
-echo "==> [5/6] Configuring browser login terminal"
-bash /opt/scripts/gen-supervisor-login-terminal.sh
+echo "==> [5/6] Configuring browser terminal"
+bash /opt/scripts/gen-supervisor-terminal.sh
 
 echo "==> [6/6] Generating one Remote Control session per repo in $WORKSPACE"
 bash /opt/scripts/gen-supervisor-repos.sh

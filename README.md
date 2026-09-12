@@ -50,8 +50,8 @@ docker exec -it claude-dev sudo -u dev claude
 
 or from a browser, if you set `TTYD_TOKEN` in `.env` — open
 `http://<host>:7681`, sign in with username `dev` and `TTYD_TOKEN` as the
-password, then run `/login` the same way (see [Browser login
-terminal](#browser-login-terminal)).
+password, then run `claude` and `/login` the same way (see [Browser
+terminal](#browser-terminal)).
 
 The login is stored in the `claude-config` volume, so it survives restarts
 and `docker compose up -d --build` afterwards — you won't need to log in
@@ -100,20 +100,23 @@ mobile app. The URL is also shown as a link for connecting from a desktop
 browser or the Claude desktop app — both share the same session list since
 it's tied to your account, not the device.
 
-## Browser login terminal
+## Browser terminal
 
 Optional — set `TTYD_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
-restart to enable a terminal at `http://<host>:7681` for the one-time
-Claude Code login, as an alternative to `docker exec`. Sign in with
-username `dev` and `TTYD_TOKEN` as the password (basic auth).
+restart to enable a full interactive terminal at `http://<host>:7681`, as
+an alternative to `docker exec`. Sign in with username `dev` and
+`TTYD_TOKEN` as the password (basic auth).
 
-It only ever runs `claude` — there's no shell behind it — and closes after
-one session; supervisord restarts it fresh for next time. Same rule as the
-dashboard: it's bound to `127.0.0.1`, don't expose it beyond that.
+**This is a real shell as `dev`** — the same access any Claude Code
+session already has (sudo apt-get, whatever `GH_TOKEN` grants, etc.), not
+scoped to anything in particular. `TTYD_TOKEN` is the only thing gating
+it, so treat it like a real password. It closes after one session;
+supervisord restarts it fresh for next time. Same rule as the dashboard:
+it's bound to `127.0.0.1`, don't expose it beyond that.
 
 Leave `TTYD_TOKEN` unset to disable it entirely — the dashboard then shows
 a note instead of the link, and `docker exec -it claude-dev sudo -u dev
-claude` still works as always.
+bash` still works as always.
 
 ## What's preloaded
 

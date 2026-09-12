@@ -35,7 +35,7 @@ every `docker compose ...` command from for the rest of this guide, and
 where `.env` and `./workspace` live. It's fine to move the whole folder
 later — everything in it is relative — just `cd` there first.
 
-## 2. (Recommended) Create a GitHub token and pick a login-terminal password
+## 2. (Recommended) Create a GitHub token and pick a terminal password
 
 This lets the container clone/push repos you have access to, without you
 having to `git clone` on the host yourself every time. Skip this step if you'd
@@ -72,15 +72,17 @@ Open `.env` in a text editor and set:
 GH_TOKEN=github_pat_your_token_here
 ```
 
-While you're in there, also pick a password for the browser-based Claude
-Code login terminal (step 4 uses it) — letters, digits, `-` and `_` only:
+While you're in there, also pick a password for the browser terminal
+(step 4 uses it for login, but it's a full shell — see [Browser
+terminal](README.md#browser-terminal) in the README) — letters, digits,
+`-` and `_` only:
 
 ```
 TTYD_TOKEN=some-password-you-pick
 ```
 
 Leave `TTYD_TOKEN` blank if you'd rather skip the browser terminal
-entirely and always use `docker exec` for login instead — both work.
+entirely and always use `docker exec` instead — both work.
 
 `.env` is already in `.gitignore`, so it stays on this machine and won't get
 committed.
@@ -121,17 +123,17 @@ docker exec -it claude-dev sudo -u dev claude
 it now and re-run `docker compose up -d` if you skipped it): open
 `http://localhost:7681`, and when the browser's basic-auth prompt appears,
 sign in with username `dev` and your `TTYD_TOKEN` as the password. You'll
-land straight in the same `claude` prompt described below.
+land in a shell — type `claude` to get the same prompt described below.
 
-Either way, inside the prompt that opens:
+Either way, once you're at the `claude` prompt:
 
 1. Type `/login` and press Enter.
 2. Follow the link it prints, sign in with your Claude/Anthropic account in
    your browser, and approve the login.
 3. Back in the terminal, if it asks about trusting the workspace, accept.
 4. Type `/exit` (or press `Ctrl+D`) to leave — if you used the browser
-   terminal, closing the tab works too; it only ever ran `claude` and
-   closes itself after you disconnect.
+   terminal, closing the tab works too; it closes itself after you
+   disconnect either way.
 
 This login is saved in a Docker volume (`claude-config`), so it survives
 container restarts and rebuilds — you won't need to repeat this unless you

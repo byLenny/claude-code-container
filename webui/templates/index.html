@@ -19,27 +19,28 @@
     .no-url { color: #888; font-size: .85rem; padding: 2rem 0; text-align: center; }
     .url { font-size: .75rem; word-break: break-all; color: #8ab4f8; margin-top: .5rem; display: block; }
     .empty { color: #999; }
-    .login-banner { background: #1b1b1b; border: 1px solid #333; border-radius: 8px;
+    .terminal-banner { background: #1b1b1b; border: 1px solid #333; border-radius: 8px;
       padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .85rem; }
-    .login-banner a { color: #8ab4f8; }
+    .terminal-banner a { color: #8ab4f8; }
   </style>
 </head>
 <body>
   <h1>claude-dev — Remote Control sessions</h1>
 
-  {% if login_terminal_enabled %}
-    <div class="login-banner">
-      🔐 <a href="#" id="login-link" target="_blank">Open the Claude Code login terminal</a>
-      — one-time /login, then close it. Username <code>dev</code>, password is your <code>TTYD_TOKEN</code>.
+  {% if terminal_enabled %}
+    <div class="terminal-banner">
+      🔐 <a href="#" id="terminal-link" target="_blank">Open browser terminal</a>
+      — a full shell as <code>dev</code> (same access any Claude Code session already
+      has). Username <code>dev</code>, password is your <code>TTYD_TOKEN</code>.
     </div>
     <script>
-      document.getElementById('login-link').href =
+      document.getElementById('terminal-link').href =
         'http://' + window.location.hostname + ':7681/';
     </script>
   {% else %}
-    <div class="login-banner">
-      Browser login terminal is off (no <code>TTYD_TOKEN</code> in <code>.env</code>). Use
-      <code>docker exec -it claude-dev sudo -u dev claude</code> instead, or set
+    <div class="terminal-banner">
+      Browser terminal is off (no <code>TTYD_TOKEN</code> in <code>.env</code>). Use
+      <code>docker exec -it claude-dev sudo -u dev bash</code> instead, or set
       <code>TTYD_TOKEN</code> and restart to enable it here.
     </div>
   {% endif %}

@@ -67,9 +67,9 @@ def index():
             }
         )
     sessions.sort(key=lambda s: s["repo"])
-    login_terminal_enabled = bool(os.environ.get("TTYD_TOKEN"))
+    terminal_enabled = bool(os.environ.get("TTYD_TOKEN"))
     return render_template(
-        "index.html", sessions=sessions, login_terminal_enabled=login_terminal_enabled
+        "index.html", sessions=sessions, terminal_enabled=terminal_enabled
     )
 
 
