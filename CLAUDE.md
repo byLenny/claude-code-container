@@ -25,3 +25,16 @@ CRLF locally (a `core.autocrlf` checkout artifact) even though the
 committed blob and `.gitattributes` say LF — normalize with `tr -d '\r'`
 before running shellcheck if its output is full of `SC1017` errors instead
 of real findings.
+
+## Python
+
+Always run `ruff check` (config in `ruff.toml`) on every Python file you
+add or modify — currently just `webui/app.py` — before considering the
+change done. Fix what it reports. If a warning is a deliberate false
+positive, suppress it inline with `# noqa: <code>` and a short comment
+saying why (see the one on the blind `except Exception` in
+`webui/app.py`), rather than a blanket rule disable in `ruff.toml`.
+
+`ruff` is a standalone binary (no Python interpreter needed to run it) —
+install via `scoop install ruff` on Windows, or see
+[astral-sh/ruff](https://github.com/astral-sh/ruff) for other platforms.

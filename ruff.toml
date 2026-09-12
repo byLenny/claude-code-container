@@ -1,0 +1,5 @@
+# Config for this repo's Python code (webui/app.py). Deliberate exceptions
+# to a rule get `# noqa: <code>` with a short comment at the point they
+# occur, not a blanket disable here — see CLAUDE.md.
+target-version = "py311"  # matches python3 in the Dockerfile's debian:12-slim base
+line-length = 100

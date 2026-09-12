@@ -31,7 +31,7 @@ def get_supervisor_processes():
     try:
         server = xmlrpc.client.ServerProxy(SUPERVISOR_RPC)
         return server.supervisor.getAllProcessInfo()
-    except Exception:
+    except Exception:  # noqa: BLE001 -- any RPC failure should just show an empty list
         return []
 
 
