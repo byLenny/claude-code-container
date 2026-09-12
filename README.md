@@ -6,7 +6,19 @@ extra apt packages in a reviewable file, and gives you a small web dashboard
 with a QR code per session so you can connect from the Claude mobile app or
 desktop app.
 
+New here? [SETUP.md](SETUP.md) walks through first-time setup step by step.
+This README is the quicker reference.
+
 ## First-time setup
+
+Optional but recommended — enables cloning repos from inside the container
+(see [Adding repos](#adding-repos)):
+
+```bash
+cp .env.example .env
+# edit .env and set GH_TOKEN to a GitHub personal access token
+# (fine-grained with Contents read/write, or classic with the `repo` scope)
+```
 
 ```bash
 docker compose up -d --build
@@ -34,15 +46,30 @@ docker compose restart
 
 ## Adding repos
 
-Clone (or copy) a repo into `./workspace/<name>` on the host, then either:
+With `GH_TOKEN` set (see First-time setup), clone straight from inside the
+container — no host-side git needed:
+
+```bash
+docker exec -it claude-dev list-repos              # see what you have access to
+docker exec -it claude-dev clone-repo owner/repo    # clone + start its session
+docker exec -it claude-dev clone-repo owner/repo my-custom-name
+```
+
+`clone-repo` accepts anything `gh repo clone` does (`owner/repo`, a full
+`https://github.com/...` URL, etc.), clones it into `./workspace/<name>`, and
+registers its Remote Control session immediately — equivalent to running
+`rescan-repos` afterwards, just in one step.
+
+You can still clone (or copy) a repo into `./workspace/<name>` on the host
+yourself instead, then either:
 
 ```bash
 docker exec -it claude-dev rescan-repos   # picks it up immediately, no restart
 ```
 
-or just restart the container. Each repo gets its own `claude remote-control
---spawn worktree --name <repo>` session, supervised and auto-restarted if it
-crashes or the network drops for a while.
+or just restart the container. Either way, each repo gets its own `claude
+remote-control --spawn worktree --name <repo>` session, supervised and
+auto-restarted if it crashes or the network drops for a while.
 
 ## Web dashboard
 

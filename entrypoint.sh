@@ -12,7 +12,7 @@ mkdir -p "$DEVTOOLS_DIR" "$GENERATED_DIR" "$LOG_DIR"
 touch "$PACKAGES_FILE"
 chown -R dev:dev "$DEVTOOLS_DIR" "$LOG_DIR"
 
-echo "==> [1/3] Re-applying approved packages from $PACKAGES_FILE"
+echo "==> [1/5] Re-applying approved packages from $PACKAGES_FILE"
 # Non-interactive: this file only ever contains packages that were already
 # reviewed via install-packages.sh, so re-provisioning them on every boot
 # (needed because plain container recreation loses anything installed ad hoc)
@@ -21,7 +21,21 @@ bash /opt/scripts/install-packages.sh --yes || \
     echo "!! Some packages in packages.txt failed to install — check the list for typos."
 rm -rf /var/lib/apt/lists/*
 
-echo "==> [2/4] Checking for optional Docker socket access"
+echo "==> [2/5] Checking GitHub authentication"
+if [ -n "${GH_TOKEN:-}" ]; then
+    # gh reads GH_TOKEN from the environment automatically — this just
+    # wires plain `git clone`/`git push` over https to use it too, so
+    # both `gh repo clone` and Claude Code's own git commands work.
+    su -s /bin/bash -c 'gh auth setup-git' dev && \
+        echo "    GH_TOKEN found — gh and git are authenticated for the 'dev' user." || \
+        echo "    !! GH_TOKEN is set but 'gh auth setup-git' failed — check the token is valid."
+else
+    echo "    No GH_TOKEN set — clone-repo/list-repos and private-repo git"
+    echo "    clones won't work until one is added to .env. Public repos"
+    echo "    over https still work without it."
+fi
+
+echo "==> [3/5] Checking for optional Docker socket access"
 DOCKER_SOCK=/var/run/docker.sock
 if [ -S "$DOCKER_SOCK" ]; then
     SOCK_GID=$(stat -c '%g' "$DOCKER_SOCK")
@@ -38,7 +52,7 @@ else
     echo "     docker-compose.docker-access.yml to enable it.)"
 fi
 
-echo "==> [3/4] Checking Claude Code authentication"
+echo "==> [4/5] Checking Claude Code authentication"
 mkdir -p "$CLAUDE_HOME"
 chown -R dev:dev /home/dev
 AUTHENTICATED=0
@@ -67,7 +81,7 @@ else
     echo "    Found persisted login — sessions will authenticate automatically."
 fi
 
-echo "==> [4/4] Generating one Remote Control session per repo in $WORKSPACE"
+echo "==> [5/5] Generating one Remote Control session per repo in $WORKSPACE"
 bash /opt/scripts/gen-supervisor-repos.sh
 
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

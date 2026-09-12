@@ -4,6 +4,11 @@ services:
     container_name: claude-dev
     hostname: claude-dev
     restart: unless-stopped
+    environment:
+      # Personal access token (repo scope) for cloning/pushing repos you
+      # have access to — see .env.example. Optional: leave unset and only
+      # public repos over https will work.
+      - GH_TOKEN=${GH_TOKEN:-}
     ports:
       # Web UI: session list + QR codes. Put this behind Caddy/Tailscale,
       # don't expose it to the open internet.

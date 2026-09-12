@@ -26,6 +26,17 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     && apt-get install -y --no-install-recommends docker-ce-cli \
     && rm -rf /var/lib/apt/lists/*
 
+# --- GitHub CLI — used to authenticate git clones with GH_TOKEN ---------
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        -o /etc/apt/keyrings/githubcli.gpg \
+    && chmod a+r /etc/apt/keyrings/githubcli.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/*
+
 # --- Non-root user with scoped sudo for package management --------------
 RUN useradd -m -s /bin/bash dev \
     && echo "dev ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" > /etc/sudoers.d/dev-apt \
@@ -46,7 +57,9 @@ RUN chmod +x /opt/scripts/*.sh /opt/entrypoint.sh \
     && ln -sf /opt/scripts/add-package.sh /usr/local/bin/add-package \
     && ln -sf /opt/scripts/install-packages.sh /usr/local/bin/install-packages \
     && ln -sf /opt/scripts/slim-packages.sh /usr/local/bin/slim-packages \
-    && ln -sf /opt/scripts/rescan-repos.sh /usr/local/bin/rescan-repos
+    && ln -sf /opt/scripts/rescan-repos.sh /usr/local/bin/rescan-repos \
+    && ln -sf /opt/scripts/clone-repo.sh /usr/local/bin/clone-repo \
+    && ln -sf /opt/scripts/list-repos.sh /usr/local/bin/list-repos
 
 WORKDIR /workspace
 EXPOSE 8080
