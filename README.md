@@ -1,3 +1,5 @@
+<p align="center"><img src="webui/static/favicon.svg" width="72" alt="claude-dev icon"></p>
+
 # claude-dev — multi-repo Claude Code Remote Control box
 
 A Docker container that runs `claude remote-control` for every git repo you
@@ -104,8 +106,10 @@ it's tied to your account, not the device.
 
 Optional — set `TTYD_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
 restart to enable a full interactive terminal at `http://<host>:7681`, as
-an alternative to `docker exec`. Sign in with username `dev` and
-`TTYD_TOKEN` as the password (basic auth).
+an alternative to `docker exec`. `TTYD_TOKEN` is only the password half of
+a basic-auth login — the username is always `dev` (fixed, not set via
+`.env`); when the browser prompts, put `dev` in the username field and
+`TTYD_TOKEN`'s value in the password field.
 
 **This is a real shell as `dev`** — the same access any Claude Code
 session already has (sudo apt-get, whatever `GH_TOKEN` grants, etc.), not
