@@ -1,0 +1,15 @@
+# Optional feature: lets Claude Code inside the container build/run/test
+# Docker containers for the projects it's working on, by giving it the
+# host's Docker socket. This is root-equivalent host access — only enable
+# it if you're comfortable with that tradeoff.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.docker-access.yml up -d
+#
+# To turn it back off, just go back to running docker-compose.yml alone
+# and recreate the container (docker compose up -d without this file).
+
+services:
+  claude-dev:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

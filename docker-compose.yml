@@ -1,0 +1,21 @@
+services:
+  claude-dev:
+    build: .
+    container_name: claude-dev
+    hostname: claude-dev
+    restart: unless-stopped
+    ports:
+      # Web UI: session list + QR codes. Put this behind Caddy/Tailscale,
+      # don't expose it to the open internet.
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./workspace:/workspace
+      - claude-config:/home/dev/.claude          # login + settings persist here
+      - claude-npm-cache:/home/dev/.npm
+      - claude-pip-cache:/home/dev/.cache/pip
+      - ./supervisor.d:/etc/supervisor/generated  # generated per-repo programs
+
+volumes:
+  claude-config:
+  claude-npm-cache:
+  claude-pip-cache:

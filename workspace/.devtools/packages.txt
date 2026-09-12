@@ -1,0 +1,2 @@
+# One apt package name per line. Lines starting with # are ignored.
+# Managed with: add-package <name>  /  install-packages  /  slim-packages
