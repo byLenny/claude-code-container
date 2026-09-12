@@ -1,0 +1,9 @@
+# Default: this project uses CRLF for regular text files.
+* text=auto eol=crlf
+
+# Exception: anything executed directly by bash or Docker inside the Linux
+# container must stay LF. A CRLF shebang line breaks exec() outright, and
+# CRLF inside a `<<'EOF'` heredoc breaks the terminator match.
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
