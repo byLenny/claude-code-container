@@ -9,6 +9,18 @@ desktop app.
 New here? [SETUP.md](SETUP.md) walks through first-time setup step by step.
 This README is the quicker reference.
 
+Clone the whole repo onto the machine that will run the container — don't
+just copy `docker-compose.yml` out on its own, it builds from the
+`Dockerfile`/`entrypoint.sh`/`scripts/`/`webui/` sitting next to it in this
+same repo:
+
+```bash
+git clone https://github.com/byLenny/claude-code-container.git
+cd claude-code-container
+```
+
+Run every `docker compose ...` command below from inside that folder.
+
 ## First-time setup
 
 Optional but recommended — enables cloning repos from inside the container
@@ -20,18 +32,26 @@ cp .env.example .env
 # (fine-grained with Contents read/write, or classic with the `repo` scope)
 ```
 
+`.env` goes in the project root, next to `docker-compose.yml` — that's the
+only place Compose looks for it. It's already in `.gitignore`.
+
 ```bash
 docker compose up -d --build
 ```
 
 Claude Code's Remote Control requires a **full interactive OAuth login** —
 API keys and `claude setup-token` don't work for it, so this one step can't
-be automated. Do it once:
+be automated. Do it once, either from the host:
 
 ```bash
 docker exec -it claude-dev sudo -u dev claude
 # inside: run /login, finish the browser OAuth flow, accept workspace trust, then exit
 ```
+
+or from a browser, if you set `TTYD_TOKEN` in `.env` — open
+`http://<host>:7681`, sign in with username `dev` and `TTYD_TOKEN` as the
+password, then run `/login` the same way (see [Browser login
+terminal](#browser-login-terminal)).
 
 The login is stored in the `claude-config` volume, so it survives restarts
 and `docker compose up -d --build` afterwards — you won't need to log in
@@ -73,12 +93,46 @@ auto-restarted if it crashes or the network drops for a while.
 
 ## Web dashboard
 
-Open `http://<host>:8080` (bound to `127.0.0.1` in the compose file on
+Open `http://<host>:8811` (bound to `127.0.0.1` in the compose file on
 purpose — put it behind Caddy/Tailscale rather than exposing it directly).
 It lists every repo's session status and a QR code for pairing the Claude
 mobile app. The URL is also shown as a link for connecting from a desktop
 browser or the Claude desktop app — both share the same session list since
 it's tied to your account, not the device.
+
+## Browser login terminal
+
+Optional — set `TTYD_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
+restart to enable a terminal at `http://<host>:7681` for the one-time
+Claude Code login, as an alternative to `docker exec`. Sign in with
+username `dev` and `TTYD_TOKEN` as the password (basic auth).
+
+It only ever runs `claude` — there's no shell behind it — and closes after
+one session; supervisord restarts it fresh for next time. Same rule as the
+dashboard: it's bound to `127.0.0.1`, don't expose it beyond that.
+
+Leave `TTYD_TOKEN` unset to disable it entirely — the dashboard then shows
+a note instead of the link, and `docker exec -it claude-dev sudo -u dev
+claude` still works as always.
+
+## What's preloaded
+
+Every repo session starts with `git`, `python3`, `node`, `curl`, `wget`, and
+`shellcheck` already on `PATH`, plus Java via
+[SDKMAN](https://sdkman.io/) — JDK 17 and 21 (the two current LTS releases)
+and whatever's currently the latest feature release, with 21 set as the
+default `java`/`javac`. (Non-LTS Java releases like 18-20 or 22-24 get
+pulled from every distributor within a few months of being superseded, so
+those specific versions aren't obtainable to preload — LTS + latest is what
+actually stays installable.)
+
+Switch JDKs in a given session with SDKMAN directly:
+
+```bash
+sdk use java 17.0.20-tem      # this shell only
+sdk default java 21.0.12+1.1-tem   # persist as the default
+sdk list java                 # see what's installed, and what else you could add
+```
 
 ## Installing extra tools
 
@@ -129,4 +183,4 @@ file and recreate the container.
   filesystem/network sandboxing layered on top.
 - **Reachability**: Remote Control is outbound-HTTPS-only, so no inbound
   port-forwarding is needed for the sessions themselves — only the
-  dashboard (port 8080) needs exposing, and only to devices you trust.
+  dashboard (port 8811) needs exposing, and only to devices you trust.

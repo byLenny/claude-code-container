@@ -19,15 +19,23 @@ happen once.
 
 ## 1. Get the code
 
-If you haven't already, clone this repo onto the machine that will run the
-container:
+`docker-compose.yml` isn't something you copy out on its own — it builds the
+image from the `Dockerfile` sitting next to it (`build: .`), and that in turn
+needs `entrypoint.sh`, `scripts/`, and `webui/` from this same repo. So clone
+the whole repo onto the machine that will actually run the container (a
+server, NAS, or your own machine):
 
 ```bash
 git clone https://github.com/byLenny/claude-code-container.git
 cd claude-code-container
 ```
 
-## 2. (Recommended) Create a GitHub token
+Wherever that `claude-code-container` folder ends up is where you'll run
+every `docker compose ...` command from for the rest of this guide, and
+where `.env` and `./workspace` live. It's fine to move the whole folder
+later — everything in it is relative — just `cd` there first.
+
+## 2. (Recommended) Create a GitHub token and pick a login-terminal password
 
 This lets the container clone/push repos you have access to, without you
 having to `git clone` on the host yourself every time. Skip this step if you'd
@@ -51,7 +59,8 @@ works.
 that instead — see
 [creating a classic token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic).)
 
-Now put it in `.env`:
+Now put it in `.env`, in the project root (the same folder as
+`docker-compose.yml` — that's the only place Compose reads it from):
 
 ```bash
 cp .env.example .env
@@ -62,6 +71,19 @@ Open `.env` in a text editor and set:
 ```
 GH_TOKEN=github_pat_your_token_here
 ```
+
+While you're in there, also pick a password for the browser-based Claude
+Code login terminal (step 4 uses it) — letters, digits, `-` and `_` only:
+
+```
+TTYD_TOKEN=some-password-you-pick
+```
+
+Leave `TTYD_TOKEN` blank if you'd rather skip the browser terminal
+entirely and always use `docker exec` for login instead — both work.
+
+`.env` is already in `.gitignore`, so it stays on this machine and won't get
+committed.
 
 ## 3. Build and start the container
 
@@ -87,17 +109,29 @@ is the one step that can't be automated, and you only do it once. (Background
 on Remote Control itself:
 [docs.claude.com/en/docs/claude-code/remote-control](https://docs.claude.com/en/docs/claude-code/remote-control).)
 
+Two ways to do it — pick whichever's easier:
+
+**From the host terminal:**
+
 ```bash
 docker exec -it claude-dev sudo -u dev claude
 ```
 
-Inside the prompt that opens:
+**From a browser**, if you set `TTYD_TOKEN` in `.env` back in step 2 (add
+it now and re-run `docker compose up -d` if you skipped it): open
+`http://localhost:7681`, and when the browser's basic-auth prompt appears,
+sign in with username `dev` and your `TTYD_TOKEN` as the password. You'll
+land straight in the same `claude` prompt described below.
+
+Either way, inside the prompt that opens:
 
 1. Type `/login` and press Enter.
 2. Follow the link it prints, sign in with your Claude/Anthropic account in
    your browser, and approve the login.
 3. Back in the terminal, if it asks about trusting the workspace, accept.
-4. Type `/exit` (or press `Ctrl+D`) to leave.
+4. Type `/exit` (or press `Ctrl+D`) to leave — if you used the browser
+   terminal, closing the tab works too; it only ever ran `claude` and
+   closes itself after you disconnect.
 
 This login is saved in a Docker volume (`claude-config`), so it survives
 container restarts and rebuilds — you won't need to repeat this unless you
@@ -134,7 +168,7 @@ Either way, each repo now has its own always-on Claude Code session.
 
 ## 6. Connect from the Claude app
 
-Open **http://localhost:8080** in a browser on the same machine (it's bound
+Open **http://localhost:8811** in a browser on the same machine (it's bound
 to `127.0.0.1` on purpose — see the note in the README if you need to reach
 it from another device). You'll see one row per repo with a status and a QR
 code.
@@ -152,6 +186,11 @@ From here, day-to-day usage is just:
 - Open the dashboard to jump into any session from your phone or desktop.
 - `docker exec -it claude-dev add-package <name>` then `install-packages` if
   a repo needs an extra apt package (see the README for details).
+
+Git, Python, Node, curl/wget, shellcheck, and Java (17, 21, and the current
+latest, via SDKMAN) are already preloaded in every session — see [What's
+preloaded](README.md#whats-preloaded) in the README for details, including
+how to switch Java versions.
 
 ## Useful links
 
@@ -174,7 +213,12 @@ Most often this means the Claude Code login (step 4) hasn't happened yet.
 
 **Container restarts in a loop after `docker compose up -d --build`.**
 Run `docker compose logs` (without `-f`) and read the last screenful — the
-entrypoint prints exactly which of its five startup checks failed.
+entrypoint prints exactly which of its six startup checks failed.
+
+**`http://localhost:7681` doesn't load, or asks for a password you don't have.**
+`TTYD_TOKEN` isn't set in `.env` (the browser terminal is off by default —
+see step 2), or the container hasn't been restarted since you set it. The
+password is whatever you set `TTYD_TOKEN` to; the username is `dev`.
 
 **I deleted `workspace/<repo>` by mistake — how do I remove its session?**
 Remove the repo folder if it's still there, then

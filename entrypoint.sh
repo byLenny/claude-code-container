@@ -12,7 +12,7 @@ mkdir -p "$DEVTOOLS_DIR" "$GENERATED_DIR" "$LOG_DIR"
 touch "$PACKAGES_FILE"
 chown -R dev:dev "$DEVTOOLS_DIR" "$LOG_DIR"
 
-echo "==> [1/5] Re-applying approved packages from $PACKAGES_FILE"
+echo "==> [1/6] Re-applying approved packages from $PACKAGES_FILE"
 # Non-interactive: this file only ever contains packages that were already
 # reviewed via install-packages.sh, so re-provisioning them on every boot
 # (needed because plain container recreation loses anything installed ad hoc)
@@ -21,7 +21,7 @@ bash /opt/scripts/install-packages.sh --yes || \
     echo "!! Some packages in packages.txt failed to install — check the list for typos."
 rm -rf /var/lib/apt/lists/*
 
-echo "==> [2/5] Checking GitHub authentication"
+echo "==> [2/6] Checking GitHub authentication"
 if [ -n "${GH_TOKEN:-}" ]; then
     # gh reads GH_TOKEN from the environment automatically — this just
     # wires plain `git clone`/`git push` over https to use it too, so
@@ -35,7 +35,7 @@ else
     echo "    over https still work without it."
 fi
 
-echo "==> [3/5] Checking for optional Docker socket access"
+echo "==> [3/6] Checking for optional Docker socket access"
 DOCKER_SOCK=/var/run/docker.sock
 if [ -S "$DOCKER_SOCK" ]; then
     SOCK_GID=$(stat -c '%g' "$DOCKER_SOCK")
@@ -52,7 +52,7 @@ else
     echo "     docker-compose.docker-access.yml to enable it.)"
 fi
 
-echo "==> [4/5] Checking Claude Code authentication"
+echo "==> [4/6] Checking Claude Code authentication"
 mkdir -p "$CLAUDE_HOME"
 chown -R dev:dev /home/dev
 AUTHENTICATED=0
@@ -68,9 +68,12 @@ if [ "$AUTHENTICATED" -eq 0 ]; then
     #  volume yet. Remote Control needs a one-time interactive  #
     #  OAuth login (headless tokens are not accepted for it).   #
     #                                                            #
-    #  Run this once, from the host:                             #
-    #    docker exec -it claude-dev sudo -u dev claude           #
-    #    then run /login inside it and accept workspace trust.   #
+    #  Run this once, either:                                    #
+    #   - from the host:                                         #
+    #       docker exec -it claude-dev sudo -u dev claude        #
+    #       then run /login inside it and accept workspace trust.#
+    #   - or, if TTYD_TOKEN is set in .env, from a browser at    #
+    #       http://<host>:7681 (see SETUP.md)                    #
     #                                                            #
     #  After that, this container will authenticate               #
     #  automatically on every future start/restart.               #
@@ -81,7 +84,10 @@ else
     echo "    Found persisted login — sessions will authenticate automatically."
 fi
 
-echo "==> [5/5] Generating one Remote Control session per repo in $WORKSPACE"
+echo "==> [5/6] Configuring browser login terminal"
+bash /opt/scripts/gen-supervisor-login-terminal.sh
+
+echo "==> [6/6] Generating one Remote Control session per repo in $WORKSPACE"
 bash /opt/scripts/gen-supervisor-repos.sh
 
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

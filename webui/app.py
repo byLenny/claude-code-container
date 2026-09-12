@@ -10,6 +10,7 @@ Small dashboard for the claude-dev container.
   from the same URL it prints).
 """
 import io
+import os
 import re
 import xmlrpc.client
 from pathlib import Path
@@ -66,7 +67,10 @@ def index():
             }
         )
     sessions.sort(key=lambda s: s["repo"])
-    return render_template("index.html", sessions=sessions)
+    login_terminal_enabled = bool(os.environ.get("TTYD_TOKEN"))
+    return render_template(
+        "index.html", sessions=sessions, login_terminal_enabled=login_terminal_enabled
+    )
 
 
 @app.route("/qr/<repo>.png")
