@@ -14,13 +14,18 @@ services:
       # Optional: leave unset to disable the terminal and leave the
       # dashboard unauthenticated; `docker exec -it claude-dev sudo -u
       # dev claude` always works either way.
+      - WEB_TOKEN=${WEB_TOKEN:-}
+      # Deprecated name for WEB_TOKEN above -- still passed through (and
+      # still works, with a warning) so an existing .env from before the
+      # rename doesn't silently lose its login. Safe to remove once .env
+      # is updated to WEB_TOKEN.
       - TTYD_TOKEN=${TTYD_TOKEN:-}
     ports:
       # Web UI: session list, QR codes, and controls (clone/start/stop
-      # sessions) -- gated by TTYD_TOKEN above when it's set. Put this
+      # sessions) -- gated by WEB_TOKEN above when it's set. Put this
       # behind Caddy/Tailscale, don't expose it to the open internet.
       - "127.0.0.1:8811:8080"
-      # Browser login terminal (only listens if TTYD_TOKEN is set above).
+      # Browser login terminal (only listens if WEB_TOKEN is set above).
       # Same rule: keep it on 127.0.0.1, don't expose it directly.
       - "127.0.0.1:7681:7681"
     volumes:

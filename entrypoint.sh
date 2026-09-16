@@ -12,6 +12,16 @@ mkdir -p "$DEVTOOLS_DIR" "$GENERATED_DIR" "$LOG_DIR"
 touch "$PACKAGES_FILE"
 chown -R dev:dev "$DEVTOOLS_DIR" "$LOG_DIR"
 
+# Back-compat: this used to be called TTYD_TOKEN, before it also gated the
+# web dashboard rather than just the browser terminal. Accept the old name
+# for now so an existing .env doesn't silently lose its login (and expose
+# the dashboard's controls) on upgrade -- rename it to WEB_TOKEN in .env
+# when convenient; this fallback will be removed eventually.
+if [ -z "${WEB_TOKEN:-}" ] && [ -n "${TTYD_TOKEN:-}" ]; then
+    export WEB_TOKEN="$TTYD_TOKEN"
+    echo "!! TTYD_TOKEN is deprecated — rename it to WEB_TOKEN in .env." >&2
+fi
+
 echo "==> [1/6] Re-applying approved packages from $PACKAGES_FILE"
 # Non-interactive: this file only ever contains packages that were already
 # reviewed via install-packages.sh, so re-provisioning them on every boot
@@ -72,7 +82,7 @@ if [ "$AUTHENTICATED" -eq 0 ]; then
     #   - from the host:                                         #
     #       docker exec -it claude-dev sudo -u dev claude        #
     #       then run /login inside it and accept workspace trust.#
-    #   - or, if TTYD_TOKEN is set in .env, from the browser     #
+    #   - or, if WEB_TOKEN is set in .env, from the browser    #
     #       terminal at http://<host>:7681 (see SETUP.md), then  #
     #       run `claude` and /login inside it                    #
     #                                                            #

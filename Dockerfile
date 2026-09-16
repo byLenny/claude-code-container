@@ -40,7 +40,7 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# --- ttyd — browser-based terminal, gated by TTYD_TOKEN --------------------
+# --- ttyd — browser-based terminal, gated by WEB_TOKEN ---------------------
 # General-purpose multi-session shell access as 'dev' (see
 # scripts/gen-supervisor-terminal.sh and scripts/terminal-attach.sh), used
 # for the one-time Claude Code login among other things.

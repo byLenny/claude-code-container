@@ -79,19 +79,23 @@ terminal](README.md#browser-terminal) in the README) — letters, digits,
 dashboard (step 6), since it can clone repos and start/stop sessions:
 
 ```
-TTYD_TOKEN=some-password-you-pick
+WEB_TOKEN=some-password-you-pick
 ```
 
-Leave `TTYD_TOKEN` blank if you'd rather skip the browser terminal
+Leave `WEB_TOKEN` blank if you'd rather skip the browser terminal
 entirely and always use `docker exec` instead — both work, but note this
 also leaves the dashboard unauthenticated (see its own security notes
 below) since it has no separate login of its own.
+
+(Upgrading an existing setup: this used to be called `TTYD_TOKEN` — the
+old name still works, with a deprecation warning in `docker compose
+logs`, but rename it here when convenient.)
 
 ### Browser terminal and dashboard: username, and what the password doesn't protect against
 
 When you sign in at `http://<host>:7681` or `http://<host>:8811`, the
 **username is always `dev`** — it's fixed in the image, not something you
-set in `.env`. Only the password (`TTYD_TOKEN`) is yours to choose, and
+set in `.env`. Only the password (`WEB_TOKEN`) is yours to choose, and
 it's shared between both: the same login works on either one.
 
 That password is the *only* thing gating a full, unscoped shell (sudo
@@ -105,7 +109,7 @@ doesn't cover:
   the network in the clear on every request unless you put a reverse proxy
   (Caddy, Tailscale, etc.) in front with HTTPS.
 - **No lockout.** There's nothing rate-limiting failed login attempts, so
-  treat `TTYD_TOKEN` like a real password, not a PIN — a long random value
+  treat `WEB_TOKEN` like a real password, not a PIN — a long random value
   beats something short and memorable. The allowed charset (letters,
   digits, `-`, `_`) also has no room for extra symbols, so length is what
   gives it strength.
@@ -124,7 +128,7 @@ doesn't cover:
 - **No per-session isolation.** Multiple people can be connected at once,
   each to their own `tmux` session (named ones can be created from the
   dashboard, at `http://<host>:8811`) or to the same one — there's no
-  concept of "your" session vs. someone else's. Anyone with `TTYD_TOKEN`
+  concept of "your" session vs. someone else's. Anyone with `WEB_TOKEN`
   can list, open, or close *any* session, including ones someone else is
   actively using. The token itself doesn't rotate or expire either —
   anyone who has it keeps access until you change it and restart.
@@ -168,10 +172,10 @@ Two ways to do it — pick whichever's easier:
 docker exec -it claude-dev sudo -u dev claude
 ```
 
-**From a browser**, if you set `TTYD_TOKEN` in `.env` back in step 2 (add
+**From a browser**, if you set `WEB_TOKEN` in `.env` back in step 2 (add
 it now and re-run `docker compose up -d` if you skipped it): open
 `http://localhost:7681`, and when the browser's basic-auth prompt appears,
-sign in with username `dev` and your `TTYD_TOKEN` as the password. You'll
+sign in with username `dev` and your `WEB_TOKEN` as the password. You'll
 land in a shell — type `claude` to get the same prompt described below.
 
 Either way, once you're at the `claude` prompt:
@@ -221,8 +225,8 @@ Either way, each repo now has its own always-on Claude Code session.
 
 Open **http://localhost:8811** in a browser on the same machine (it's bound
 to `127.0.0.1` on purpose — see the note in the README if you need to reach
-it from another device). If you set `TTYD_TOKEN` in step 2, the browser
-will prompt for login here too — username `dev`, `TTYD_TOKEN` as the
+it from another device). If you set `WEB_TOKEN` in step 2, the browser
+will prompt for login here too — username `dev`, `WEB_TOKEN` as the
 password, same as the terminal. You'll see one row per repo with a status
 and a QR code.
 
@@ -269,12 +273,20 @@ Run `docker compose logs` (without `-f`) and read the last screenful — the
 entrypoint prints exactly which of its six startup checks failed.
 
 **`http://localhost:7681` doesn't load, or asks for a password you don't have.**
-`TTYD_TOKEN` isn't set in `.env` (the browser terminal is off by default —
+`WEB_TOKEN` isn't set in `.env` (the browser terminal is off by default —
 see step 2), or the container hasn't been restarted since you set it. The
-password is whatever you set `TTYD_TOKEN` to; the username is `dev`. See
+password is whatever you set `WEB_TOKEN` to; the username is `dev`. See
 [Browser terminal and dashboard: username, and what the password doesn't
 protect against](#browser-terminal-and-dashboard-username-and-what-the-password-doesnt-protect-against)
 above for what that password does and doesn't secure.
+
+**`http://localhost:8811` suddenly asks for a login I don't have, after upgrading.**
+The dashboard now requires the same login as the terminal (`WEB_TOKEN`)
+whenever one is set — it used to be unauthenticated. If you had
+`TTYD_TOKEN` set in `.env` from before the rename, it still works as
+`WEB_TOKEN` (check `docker compose logs` for a deprecation warning
+confirming that), so the same value logs in on both. Rename it to
+`WEB_TOKEN` in `.env` when convenient.
 
 **I deleted `workspace/<repo>` by mistake — how do I remove its session?**
 Remove the repo folder if it's still there, then

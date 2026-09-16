@@ -50,8 +50,8 @@ docker exec -it claude-dev sudo -u dev claude
 # inside: run /login, finish the browser OAuth flow, accept workspace trust, then exit
 ```
 
-or from a browser, if you set `TTYD_TOKEN` in `.env` — open
-`http://<host>:7681`, sign in with username `dev` and `TTYD_TOKEN` as the
+or from a browser, if you set `WEB_TOKEN` in `.env` — open
+`http://<host>:7681`, sign in with username `dev` and `WEB_TOKEN` as the
 password, then run `claude` and `/login` the same way (see [Browser
 terminal](#browser-terminal)).
 
@@ -106,8 +106,8 @@ From here you can also start/restart/stop a repo's Remote Control session,
 clone a new repo (equivalent to `clone-repo` — no shell needed), and, if
 the browser terminal is enabled, list/create/close its `tmux` sessions
 (see [Browser terminal](#browser-terminal) below). Because it can do all
-that, it requires the same `TTYD_TOKEN` login as the terminal (HTTP Basic
-Auth, username `dev`) whenever one is set. Leaving `TTYD_TOKEN` unset
+that, it requires the same `WEB_TOKEN` login as the terminal (HTTP Basic
+Auth, username `dev`) whenever one is set. Leaving `WEB_TOKEN` unset
 disables the terminal *and* leaves the dashboard unauthenticated — at
 that point it's only as protected as the `127.0.0.1` binding actually is
 (see SETUP.md's notes on that binding for the Docker Desktop caveat), so
@@ -116,18 +116,20 @@ itself.
 
 ## Browser terminal
 
-Optional — set `TTYD_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
+Optional — set `WEB_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
 restart to enable a full interactive terminal at `http://<host>:7681`, as
 an alternative to `docker exec`. The same token also becomes the [web
 dashboard](#web-dashboard)'s login, since it can start/stop sessions and
-clone repos, not just view them. `TTYD_TOKEN` is only the password half of
+clone repos, not just view them. `WEB_TOKEN` is only the password half of
 a basic-auth login — the username is always `dev` (fixed, not set via
 `.env`); when the browser prompts, put `dev` in the username field and
-`TTYD_TOKEN`'s value in the password field.
+`WEB_TOKEN`'s value in the password field. (Formerly `TTYD_TOKEN` — that
+name still works, with a deprecation warning, but rename it in `.env`
+when convenient.)
 
 **This is a real shell as `dev`** — the same access any Claude Code
 session already has (sudo apt-get, whatever `GH_TOKEN` grants, etc.), not
-scoped to anything in particular. `TTYD_TOKEN` is the only thing gating
+scoped to anything in particular. `WEB_TOKEN` is the only thing gating
 it, so treat it like a real password. Each session is backed by `tmux`,
 which is a separate process the browser connection doesn't own — so
 closing the tab never loses anything, and multiple sessions (and multiple
@@ -137,14 +139,14 @@ at `http://<host>:8811` lists and creates named sessions, each with its
 own starting folder, and can close them too. Typing `exit` at the shell
 prompt (not inside `claude` itself) ends a session for good instead of
 just detaching from it. There's no per-session access control — anyone
-with `TTYD_TOKEN` can open or close any session, not just ones they
+with `WEB_TOKEN` can open or close any session, not just ones they
 started. Same rule as the dashboard: it's bound to `127.0.0.1`, don't
 expose it beyond that — though see [SETUP.md's notes on what that
 password does and doesn't protect
 against](SETUP.md#browser-terminal-and-dashboard-username-and-what-the-password-doesnt-protect-against)
 before relying on it, especially on Docker Desktop.
 
-Leave `TTYD_TOKEN` unset to disable it entirely — the dashboard then shows
+Leave `WEB_TOKEN` unset to disable it entirely — the dashboard then shows
 a note instead of the link (and becomes unauthenticated itself, since it
 has no login of its own), and `docker exec -it claude-dev sudo -u dev
 bash` still works as always.

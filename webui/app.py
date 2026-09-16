@@ -15,11 +15,14 @@ Small dashboard for the claude-dev container.
 - Shells out to clone-repo/gen-supervisor-repos to add new repo
   sessions. This process already runs as 'dev' (see supervisord.conf),
   same user those scripts expect when invoked directly (without sudo).
-- Requires the same TTYD_TOKEN as the browser terminal (HTTP Basic Auth,
+- Requires the same WEB_TOKEN as the browser terminal (HTTP Basic Auth,
   username 'dev') whenever one is set -- this page can clone repos and
   start/stop sessions, not just view them, so it needs the same gate the
   terminal already has. Matches the terminal's own opt-out: if
-  TTYD_TOKEN is unset, this stays unauthenticated too, same as today.
+  WEB_TOKEN is unset, this stays unauthenticated too, same as today.
+  (entrypoint.sh normalizes the deprecated TTYD_TOKEN name into
+  WEB_TOKEN before this process ever starts, so only the new name needs
+  to be checked here.)
 """
 
 import hmac
@@ -39,7 +42,7 @@ app = Flask(__name__)
 
 @app.before_request
 def require_auth():
-    token = os.environ.get("TTYD_TOKEN")
+    token = os.environ.get("WEB_TOKEN")
     if not token:
         return None
     auth = request.authorization
@@ -170,7 +173,7 @@ def index():
             }
         )
     sessions.sort(key=lambda s: s["repo"])
-    terminal_enabled = bool(os.environ.get("TTYD_TOKEN"))
+    terminal_enabled = bool(os.environ.get("WEB_TOKEN"))
     return render_template(
         "index.html",
         sessions=sessions,

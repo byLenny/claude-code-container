@@ -48,7 +48,7 @@
     <div class="terminal-banner">
       🔐 <a href="#" id="terminal-link" target="_blank">Open browser terminal</a>
       — a full shell as <code>dev</code> (same access any Claude Code session already
-      has). Username <code>dev</code>, password is your <code>TTYD_TOKEN</code>.
+      has). Username <code>dev</code>, password is your <code>WEB_TOKEN</code>.
     </div>
     <script>
       document.getElementById('terminal-link').href =
@@ -56,9 +56,9 @@
     </script>
   {% else %}
     <div class="terminal-banner">
-      Browser terminal is off (no <code>TTYD_TOKEN</code> in <code>.env</code>). Use
+      Browser terminal is off (no <code>WEB_TOKEN</code> in <code>.env</code>). Use
       <code>docker exec -it claude-dev sudo -u dev bash</code> instead, or set
-      <code>TTYD_TOKEN</code> and restart to enable it here. This also means
+      <code>WEB_TOKEN</code> and restart to enable it here. This also means
       <strong>this dashboard has no login right now</strong> — setting a token
       protects this page too, not just the terminal.
     </div>
