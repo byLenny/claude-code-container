@@ -116,7 +116,10 @@ session already has (sudo apt-get, whatever `GH_TOKEN` grants, etc.), not
 scoped to anything in particular. `TTYD_TOKEN` is the only thing gating
 it, so treat it like a real password. It closes after one session;
 supervisord restarts it fresh for next time. Same rule as the dashboard:
-it's bound to `127.0.0.1`, don't expose it beyond that.
+it's bound to `127.0.0.1`, don't expose it beyond that — though see
+[SETUP.md's notes on what that password does and doesn't protect
+against](SETUP.md#browser-terminal-username-and-what-the-password-doesnt-protect-against)
+before relying on it, especially on Docker Desktop.
 
 Leave `TTYD_TOKEN` unset to disable it entirely — the dashboard then shows
 a note instead of the link, and `docker exec -it claude-dev sudo -u dev

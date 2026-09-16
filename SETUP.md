@@ -84,6 +84,44 @@ TTYD_TOKEN=some-password-you-pick
 Leave `TTYD_TOKEN` blank if you'd rather skip the browser terminal
 entirely and always use `docker exec` instead — both work.
 
+### Browser terminal: username, and what the password doesn't protect against
+
+When you sign in at `http://<host>:7681`, the **username is always `dev`**
+— it's fixed in the image, not something you set in `.env`. Only the
+password (`TTYD_TOKEN`) is yours to choose.
+
+That password is the *only* thing gating a full, unscoped shell (sudo
+apt-get, whatever `GH_TOKEN` grants, etc. — see
+[Browser terminal](README.md#browser-terminal) in the README), so it's
+worth knowing what it doesn't cover:
+
+- **No TLS.** It's plain HTTP Basic Auth, so the username/password go over
+  the network in the clear on every request unless you put a reverse proxy
+  (Caddy, Tailscale, etc.) in front with HTTPS.
+- **No lockout.** There's nothing rate-limiting failed login attempts, so
+  treat `TTYD_TOKEN` like a real password, not a PIN — a long random value
+  beats something short and memorable. The allowed charset (letters,
+  digits, `-`, `_`) also has no room for extra symbols, so length is what
+  gives it strength.
+- **`127.0.0.1:7681:7681` in `docker-compose.yml` is not a reliable
+  substitute for a real password.** It's meant to keep the port off your
+  network entirely, and on native Docker Engine (Linux) it does. But on
+  **Docker Desktop (Windows/Mac)**, the VM-based port-forwarding proxy does
+  not always honor loopback-only bindings — the port can still answer on
+  your LAN IP, not just `localhost`. Don't assume `127.0.0.1` in the compose
+  file means "only this machine can reach it": verify it yourself from a
+  second device (`curl http://<host-LAN-IP>:7681/` — a connection refused
+  is what you want; a response means it's reachable from your network) and,
+  if it answers, put a firewall rule or a reverse proxy with its own auth in
+  front rather than relying on the port binding alone.
+- Only one person can be connected at a time (`ttyd --once` closes the
+  session after you disconnect), but the token itself doesn't rotate or
+  expire — anyone who has it can connect the moment it's free.
+
+Once you're signed in at the shell prompt (`dev@claude-dev:~$`), the next
+step is signing in to *Claude Code itself* — that's [step 4](#4-log-in-to-claude-code-one-time-only)
+below: run `claude`, then `/login` inside it.
+
 `.env` is already in `.gitignore`, so it stays on this machine and won't get
 committed.
 
@@ -220,7 +258,10 @@ entrypoint prints exactly which of its six startup checks failed.
 **`http://localhost:7681` doesn't load, or asks for a password you don't have.**
 `TTYD_TOKEN` isn't set in `.env` (the browser terminal is off by default —
 see step 2), or the container hasn't been restarted since you set it. The
-password is whatever you set `TTYD_TOKEN` to; the username is `dev`.
+password is whatever you set `TTYD_TOKEN` to; the username is `dev`. See
+[Browser terminal: username, and what the password doesn't protect
+against](#browser-terminal-username-and-what-the-password-doesnt-protect-against)
+above for what that password does and doesn't secure.
 
 **I deleted `workspace/<repo>` by mistake — how do I remove its session?**
 Remove the repo folder if it's still there, then
