@@ -29,9 +29,20 @@ if ! [[ "$TTYD_TOKEN" =~ ^[A-Za-z0-9_-]+$ ]]; then
     exit 0
 fi
 
+# `--once` means ttyd tears its shell down on every disconnect and
+# supervisord starts a fresh one for the next connection (see the comment
+# above) -- fine for a one-time login, but it reset any in-progress work
+# every time the tab was closed. Routing through a shared tmux session
+# ("main") fixes that: tmux is a separate daemon that ttyd's connection
+# doesn't own, so it keeps running (and whatever's in it -- shell cwd,
+# running commands, scrollback) across ttyd restarts. `new-session -A`
+# attaches to "main" if it's already there, or creates it on first
+# connect. Note this means the session is shared: whoever connects next
+# (with the same TTYD_TOKEN) picks up exactly where the last person left
+# off, same as any shared tmux session would.
 cat > "$CONF" <<EOF
 [program:claude-terminal]
-command=/usr/local/bin/ttyd --once --writable -p 7681 -c "dev:${TTYD_TOKEN}" su -s /bin/bash dev
+command=/usr/local/bin/ttyd --once --writable -p 7681 -c "dev:${TTYD_TOKEN}" su -s /bin/bash -c "tmux new-session -A -s main" dev
 directory=/workspace
 user=root
 autostart=true
@@ -46,4 +57,7 @@ EOF
 echo "    TTYD_TOKEN set — browser terminal enabled at http://<host>:7681"
 echo "    (username 'dev', password is TTYD_TOKEN). This is a full interactive"
 echo "    shell as 'dev' — same access any Claude Code session already has."
-echo "    Closes after one session; supervisord restarts it fresh for next use."
+echo "    Each connection joins a shared tmux session ('main'), so closing the"
+echo "    tab preserves whatever was running -- reconnect to pick up where you"
+echo "    left off. Typing 'exit' at the shell prompt (not inside 'claude')"
+echo "    ends that session for good instead of just detaching from it."

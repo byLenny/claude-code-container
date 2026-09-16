@@ -114,10 +114,15 @@ a basic-auth login — the username is always `dev` (fixed, not set via
 **This is a real shell as `dev`** — the same access any Claude Code
 session already has (sudo apt-get, whatever `GH_TOKEN` grants, etc.), not
 scoped to anything in particular. `TTYD_TOKEN` is the only thing gating
-it, so treat it like a real password. It closes after one session;
-supervisord restarts it fresh for next time. Same rule as the dashboard:
-it's bound to `127.0.0.1`, don't expose it beyond that — though see
-[SETUP.md's notes on what that password does and doesn't protect
+it, so treat it like a real password. The underlying connection closes
+after one session and supervisord restarts it fresh for the next — but
+every connection joins the same shared `tmux` session (named `main`), so
+closing the tab doesn't lose anything: reconnect and you're back where
+you left off (cwd, running commands, scrollback). Typing `exit` at the
+shell prompt (not inside `claude` itself) ends that session for good
+instead of just detaching from it. Same rule as the dashboard: it's bound
+to `127.0.0.1`, don't expose it beyond that — though see [SETUP.md's
+notes on what that password does and doesn't protect
 against](SETUP.md#browser-terminal-username-and-what-the-password-doesnt-protect-against)
 before relying on it, especially on Docker Desktop.
 

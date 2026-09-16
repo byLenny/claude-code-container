@@ -115,8 +115,11 @@ worth knowing what it doesn't cover:
   if it answers, put a firewall rule or a reverse proxy with its own auth in
   front rather than relying on the port binding alone.
 - Only one person can be connected at a time (`ttyd --once` closes the
-  session after you disconnect), but the token itself doesn't rotate or
-  expire — anyone who has it can connect the moment it's free.
+  connection after you disconnect), but the token itself doesn't rotate
+  or expire — anyone who has it can connect the moment it's free. And
+  because every connection joins the same shared `tmux` session, the
+  next person in sees whatever the previous one left on screen or
+  running — there's no per-connection isolation.
 
 Once you're signed in at the shell prompt (`dev@claude-dev:~$`), the next
 step is signing in to *Claude Code itself* — that's [step 4](#4-log-in-to-claude-code-one-time-only)
