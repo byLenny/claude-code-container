@@ -65,6 +65,18 @@ RUN useradd -m -s /bin/bash dev \
     && echo "dev ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" > /etc/sudoers.d/dev-apt \
     && chmod 0440 /etc/sudoers.d/dev-apt
 
+# `sudo -u dev <cmd>` (the documented login command, e.g.
+# `docker exec -it claude-dev sudo -u dev claude`) does NOT set HOME to
+# dev's home directory by default -- that only happens if the caller
+# passes -H, or always_set_home is enabled, and neither is true out of
+# the box. Without it, HOME stays whatever the invoking user's (root's)
+# HOME was, i.e. /root -- so anything keyed off $HOME (npm's per-user
+# .npmrc, Claude Code's own ~/.claude config dir, etc.) silently resolves
+# to the wrong place when reached via sudo instead of `su`. Force it on
+# globally so `sudo -u dev` behaves the way the docs assume.
+RUN echo "Defaults always_set_home" > /etc/sudoers.d/always-set-home \
+    && chmod 0440 /etc/sudoers.d/always-set-home
+
 # --- Claude Code CLI — installed as 'dev' into a 'dev'-owned npm prefix --
 # nodesource's npm has no non-root global prefix by default, so a plain
 # `npm install -g` here would land under root-owned system dirs — exactly
@@ -80,10 +92,16 @@ RUN useradd -m -s /bin/bash dev \
 # PATH/secure_path, so `claude` resolves no matter how dev's shell was
 # reached. That symlink target stays valid across self-updates since npm
 # rewrites the file in place rather than moving it.
+#
+# The prefix is also persisted in dev's own ~/.npmrc below, not just the
+# env var above — belt-and-suspenders against any invocation path
+# (present or future) that inherits dev's HOME correctly but not the
+# rest of the container's environment.
 ENV NPM_CONFIG_PREFIX=/home/dev/.npm-global
 ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
 RUN mkdir -p "${NPM_CONFIG_PREFIX}" \
     && chown -R dev:dev "${NPM_CONFIG_PREFIX}" \
+    && su -s /bin/bash -c "npm config set prefix ${NPM_CONFIG_PREFIX}" dev \
     && su -s /bin/bash -c 'npm install -g @anthropic-ai/claude-code' dev \
     && ln -sf "${NPM_CONFIG_PREFIX}/bin/claude" /usr/local/bin/claude
 
