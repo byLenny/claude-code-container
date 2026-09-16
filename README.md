@@ -105,16 +105,22 @@ it's tied to your account, not the device.
 From here you can also start/restart/stop a repo's Remote Control session,
 clone a new repo (equivalent to `clone-repo` — no shell needed), and, if
 the browser terminal is enabled, list/create/close its `tmux` sessions
-(see [Browser terminal](#browser-terminal) below). None of this is behind
-any authentication of its own — the dashboard has no login, so these are
-exactly as protected as the `127.0.0.1` binding actually is (see SETUP.md's
-notes on that binding for the Docker Desktop caveat).
+(see [Browser terminal](#browser-terminal) below). Because it can do all
+that, it requires the same `TTYD_TOKEN` login as the terminal (HTTP Basic
+Auth, username `dev`) whenever one is set. Leaving `TTYD_TOKEN` unset
+disables the terminal *and* leaves the dashboard unauthenticated — at
+that point it's only as protected as the `127.0.0.1` binding actually is
+(see SETUP.md's notes on that binding for the Docker Desktop caveat), so
+setting a token is worth doing even if you don't plan to use the terminal
+itself.
 
 ## Browser terminal
 
 Optional — set `TTYD_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
 restart to enable a full interactive terminal at `http://<host>:7681`, as
-an alternative to `docker exec`. `TTYD_TOKEN` is only the password half of
+an alternative to `docker exec`. The same token also becomes the [web
+dashboard](#web-dashboard)'s login, since it can start/stop sessions and
+clone repos, not just view them. `TTYD_TOKEN` is only the password half of
 a basic-auth login — the username is always `dev` (fixed, not set via
 `.env`); when the browser prompts, put `dev` in the username field and
 `TTYD_TOKEN`'s value in the password field.
@@ -135,11 +141,12 @@ with `TTYD_TOKEN` can open or close any session, not just ones they
 started. Same rule as the dashboard: it's bound to `127.0.0.1`, don't
 expose it beyond that — though see [SETUP.md's notes on what that
 password does and doesn't protect
-against](SETUP.md#browser-terminal-username-and-what-the-password-doesnt-protect-against)
+against](SETUP.md#browser-terminal-and-dashboard-username-and-what-the-password-doesnt-protect-against)
 before relying on it, especially on Docker Desktop.
 
 Leave `TTYD_TOKEN` unset to disable it entirely — the dashboard then shows
-a note instead of the link, and `docker exec -it claude-dev sudo -u dev
+a note instead of the link (and becomes unauthenticated itself, since it
+has no login of its own), and `docker exec -it claude-dev sudo -u dev
 bash` still works as always.
 
 ## What's preloaded

@@ -9,13 +9,16 @@ services:
       # have access to — see .env.example. Optional: leave unset and only
       # public repos over https will work.
       - GH_TOKEN=${GH_TOKEN:-}
-      # Shared secret for the browser-based Claude Code login terminal —
-      # see .env.example. Optional: leave unset to disable it entirely and
-      # use `docker exec -it claude-dev sudo -u dev claude` instead.
+      # Shared secret for the browser-based terminal AND the web
+      # dashboard's HTTP Basic Auth (username 'dev') — see .env.example.
+      # Optional: leave unset to disable the terminal and leave the
+      # dashboard unauthenticated; `docker exec -it claude-dev sudo -u
+      # dev claude` always works either way.
       - TTYD_TOKEN=${TTYD_TOKEN:-}
     ports:
-      # Web UI: session list + QR codes. Put this behind Caddy/Tailscale,
-      # don't expose it to the open internet.
+      # Web UI: session list, QR codes, and controls (clone/start/stop
+      # sessions) -- gated by TTYD_TOKEN above when it's set. Put this
+      # behind Caddy/Tailscale, don't expose it to the open internet.
       - "127.0.0.1:8811:8080"
       # Browser login terminal (only listens if TTYD_TOKEN is set above).
       # Same rule: keep it on 127.0.0.1, don't expose it directly.

@@ -15,8 +15,14 @@ Small dashboard for the claude-dev container.
 - Shells out to clone-repo/gen-supervisor-repos to add new repo
   sessions. This process already runs as 'dev' (see supervisord.conf),
   same user those scripts expect when invoked directly (without sudo).
+- Requires the same TTYD_TOKEN as the browser terminal (HTTP Basic Auth,
+  username 'dev') whenever one is set -- this page can clone repos and
+  start/stop sessions, not just view them, so it needs the same gate the
+  terminal already has. Matches the terminal's own opt-out: if
+  TTYD_TOKEN is unset, this stays unauthenticated too, same as today.
 """
 
+import hmac
 import io
 import os
 import re
@@ -29,6 +35,21 @@ import qrcode
 from flask import Flask, Response, redirect, render_template, request, url_for
 
 app = Flask(__name__)
+
+
+@app.before_request
+def require_auth():
+    token = os.environ.get("TTYD_TOKEN")
+    if not token:
+        return None
+    auth = request.authorization
+    if not auth or auth.username != "dev" or not hmac.compare_digest(auth.password or "", token):
+        return Response(
+            "Authentication required.",
+            401,
+            {"WWW-Authenticate": 'Basic realm="claude-dev dashboard"'},
+        )
+    return None
 
 SUPERVISOR_RPC = "http://127.0.0.1:9001/RPC2"
 LOG_DIR = Path("/var/log/claude-sessions")

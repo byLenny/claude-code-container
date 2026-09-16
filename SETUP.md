@@ -75,25 +75,31 @@ GH_TOKEN=github_pat_your_token_here
 While you're in there, also pick a password for the browser terminal
 (step 4 uses it for login, but it's a full shell — see [Browser
 terminal](README.md#browser-terminal) in the README) — letters, digits,
-`-` and `_` only:
+`-` and `_` only. This same password also becomes the login for the web
+dashboard (step 6), since it can clone repos and start/stop sessions:
 
 ```
 TTYD_TOKEN=some-password-you-pick
 ```
 
 Leave `TTYD_TOKEN` blank if you'd rather skip the browser terminal
-entirely and always use `docker exec` instead — both work.
+entirely and always use `docker exec` instead — both work, but note this
+also leaves the dashboard unauthenticated (see its own security notes
+below) since it has no separate login of its own.
 
-### Browser terminal: username, and what the password doesn't protect against
+### Browser terminal and dashboard: username, and what the password doesn't protect against
 
-When you sign in at `http://<host>:7681`, the **username is always `dev`**
-— it's fixed in the image, not something you set in `.env`. Only the
-password (`TTYD_TOKEN`) is yours to choose.
+When you sign in at `http://<host>:7681` or `http://<host>:8811`, the
+**username is always `dev`** — it's fixed in the image, not something you
+set in `.env`. Only the password (`TTYD_TOKEN`) is yours to choose, and
+it's shared between both: the same login works on either one.
 
 That password is the *only* thing gating a full, unscoped shell (sudo
 apt-get, whatever `GH_TOKEN` grants, etc. — see
-[Browser terminal](README.md#browser-terminal) in the README), so it's
-worth knowing what it doesn't cover:
+[Browser terminal](README.md#browser-terminal) in the README) *and* the
+dashboard's controls (clone a repo, start/stop/restart sessions — see
+[Web dashboard](README.md#web-dashboard)), so it's worth knowing what it
+doesn't cover:
 
 - **No TLS.** It's plain HTTP Basic Auth, so the username/password go over
   the network in the clear on every request unless you put a reverse proxy
@@ -103,17 +109,18 @@ worth knowing what it doesn't cover:
   beats something short and memorable. The allowed charset (letters,
   digits, `-`, `_`) also has no room for extra symbols, so length is what
   gives it strength.
-- **`127.0.0.1:7681:7681` in `docker-compose.yml` is not a reliable
-  substitute for a real password.** It's meant to keep the port off your
-  network entirely, and on native Docker Engine (Linux) it does. But on
-  **Docker Desktop (Windows/Mac)**, the VM-based port-forwarding proxy does
-  not always honor loopback-only bindings — the port can still answer on
-  your LAN IP, not just `localhost`. Don't assume `127.0.0.1` in the compose
-  file means "only this machine can reach it": verify it yourself from a
-  second device (`curl http://<host-LAN-IP>:7681/` — a connection refused
-  is what you want; a response means it's reachable from your network) and,
-  if it answers, put a firewall rule or a reverse proxy with its own auth in
-  front rather than relying on the port binding alone.
+- **`127.0.0.1:7681:7681`/`127.0.0.1:8811:8080` in `docker-compose.yml`
+  are not a reliable substitute for a real password.** They're meant to
+  keep both ports off your network entirely, and on native Docker Engine
+  (Linux) they do. But on **Docker Desktop (Windows/Mac)**, the VM-based
+  port-forwarding proxy does not always honor loopback-only bindings —
+  either port can still answer on your LAN IP, not just `localhost`.
+  Don't assume `127.0.0.1` in the compose file means "only this machine
+  can reach it": verify it yourself from a second device (`curl
+  http://<host-LAN-IP>:7681/` and `:8811` — a connection refused is what
+  you want; a response means it's reachable from your network) and, if
+  either answers, put a firewall rule or a reverse proxy with its own
+  auth in front rather than relying on the port binding alone.
 - **No per-session isolation.** Multiple people can be connected at once,
   each to their own `tmux` session (named ones can be created from the
   dashboard, at `http://<host>:8811`) or to the same one — there's no
@@ -214,8 +221,10 @@ Either way, each repo now has its own always-on Claude Code session.
 
 Open **http://localhost:8811** in a browser on the same machine (it's bound
 to `127.0.0.1` on purpose — see the note in the README if you need to reach
-it from another device). You'll see one row per repo with a status and a QR
-code.
+it from another device). If you set `TTYD_TOKEN` in step 2, the browser
+will prompt for login here too — username `dev`, `TTYD_TOKEN` as the
+password, same as the terminal. You'll see one row per repo with a status
+and a QR code.
 
 - **Mobile**: scan the QR code with the Claude mobile app.
 - **Desktop/browser**: click the link shown next to the QR code.
@@ -263,8 +272,8 @@ entrypoint prints exactly which of its six startup checks failed.
 `TTYD_TOKEN` isn't set in `.env` (the browser terminal is off by default —
 see step 2), or the container hasn't been restarted since you set it. The
 password is whatever you set `TTYD_TOKEN` to; the username is `dev`. See
-[Browser terminal: username, and what the password doesn't protect
-against](#browser-terminal-username-and-what-the-password-doesnt-protect-against)
+[Browser terminal and dashboard: username, and what the password doesn't
+protect against](#browser-terminal-and-dashboard-username-and-what-the-password-doesnt-protect-against)
 above for what that password does and doesn't secure.
 
 **I deleted `workspace/<repo>` by mistake — how do I remove its session?**
