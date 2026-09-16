@@ -25,9 +25,13 @@ services:
       - claude-config:/home/dev/.claude          # login + settings persist here
       - claude-npm-cache:/home/dev/.npm
       - claude-pip-cache:/home/dev/.cache/pip
+      - claude-gradle-cache:/home/dev/.gradle     # wrapper distributions + deps
+      - claude-maven-cache:/home/dev/.m2          # local repo (wrapper or mvn)
       - ./supervisor.d:/etc/supervisor/generated  # generated per-repo programs
 
 volumes:
   claude-config:
   claude-npm-cache:
   claude-pip-cache:
+  claude-gradle-cache:
+  claude-maven-cache:
