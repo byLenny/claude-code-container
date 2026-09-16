@@ -8,6 +8,7 @@
   <style>
     body { font-family: -apple-system, system-ui, sans-serif; background: #111; color: #eee; margin: 0; padding: 2rem; }
     h1 { font-weight: 600; }
+    h2 { font-weight: 600; font-size: 1.1rem; margin: 2.5rem 0 1rem; }
     .grid { display: flex; flex-wrap: wrap; gap: 1.25rem; }
     .card { background: #1b1b1b; border: 1px solid #333; border-radius: 10px; padding: 1rem 1.25rem; width: 220px; }
     .repo { font-weight: 600; font-size: 1.05rem; margin-bottom: .4rem; word-break: break-all; }
@@ -23,6 +24,21 @@
     .terminal-banner { background: #1b1b1b; border: 1px solid #333; border-radius: 8px;
       padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .85rem; }
     .terminal-banner a { color: #8ab4f8; }
+    .actions { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
+    .actions form { margin: 0; }
+    button, .btn { background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 6px;
+      padding: .3rem .6rem; font-size: .75rem; cursor: pointer; text-decoration: none; display: inline-block; }
+    button:hover, .btn:hover { background: #353535; }
+    button.danger:hover { background: #4d1f1f; border-color: #6b2c2c; }
+    .panel { background: #1b1b1b; border: 1px solid #333; border-radius: 10px; padding: 1rem 1.25rem; max-width: 480px; }
+    .panel label { display: block; font-size: .8rem; color: #aaa; margin: .6rem 0 .25rem; }
+    .panel input, .panel select { width: 100%; box-sizing: border-box; background: #111; color: #eee;
+      border: 1px solid #333; border-radius: 6px; padding: .4rem .5rem; font-size: .85rem; }
+    .panel .btn-row { margin-top: 1rem; }
+    .session-row { display: flex; align-items: center; gap: .75rem; background: #1b1b1b; border: 1px solid #333;
+      border-radius: 8px; padding: .6rem 1rem; margin-bottom: .6rem; max-width: 480px; }
+    .session-row .name { font-weight: 600; flex: 1; word-break: break-all; }
+    .session-row .meta { font-size: .75rem; color: #888; }
   </style>
 </head>
 <body>
@@ -47,8 +63,8 @@
   {% endif %}
 
   {% if not sessions %}
-    <p class="empty">No repo sessions configured yet. Clone a git repo into <code>/workspace</code>
-    and run <code>rescan-repos</code>, or restart the container.</p>
+    <p class="empty">No repo sessions configured yet. Clone one below, or clone a git
+    repo into <code>/workspace</code> yourself and run <code>rescan-repos</code>.</p>
   {% endif %}
 
   <div class="grid">
@@ -62,9 +78,77 @@
         {% else %}
           <div class="no-url">waiting for session URL...</div>
         {% endif %}
+        <div class="actions">
+          <form method="post" action="/session/{{ s.repo }}/start">
+            <button type="submit">Start</button>
+          </form>
+          <form method="post" action="/session/{{ s.repo }}/restart">
+            <button type="submit">Restart</button>
+          </form>
+          <form method="post" action="/session/{{ s.repo }}/stop"
+                onsubmit="return confirm('Stop the {{ s.repo }} session?');">
+            <button type="submit" class="danger">Stop</button>
+          </form>
+        </div>
       </div>
     {% endfor %}
   </div>
+
+  <h2>Add a repo</h2>
+  <div class="panel">
+    <form method="post" action="/clone">
+      <label for="source">Repo (owner/repo or URL)</label>
+      <input type="text" id="source" name="source" placeholder="owner/repo" required>
+      <label for="repo-name">Folder name (optional)</label>
+      <input type="text" id="repo-name" name="name" placeholder="defaults to the repo name"
+             pattern="[A-Za-z0-9_.-]*" title="letters, digits, '.', '-', '_' only">
+      <div class="btn-row">
+        <button type="submit">Clone &amp; start session</button>
+      </div>
+    </form>
+  </div>
+
+  {% if terminal_enabled %}
+    <h2>Terminal sessions</h2>
+    {% if not terminal_sessions %}
+      <p class="empty">No terminal sessions running yet.</p>
+    {% endif %}
+    {% for t in terminal_sessions %}
+      <div class="session-row">
+        <span class="name">{{ t.name }}</span>
+        <span class="meta">{{ t.windows }} window{{ '' if t.windows == '1' else 's' }}{{ ' · attached' if t.attached else '' }}</span>
+        <a class="btn open-terminal" data-session="{{ t.name }}" href="#" target="_blank">Open</a>
+        <form method="post" action="/terminal/{{ t.name }}/close"
+              onsubmit="return confirm('End terminal session {{ t.name }}? Anything running in it will be killed.');">
+          <button type="submit" class="danger">Close</button>
+        </form>
+      </div>
+    {% endfor %}
+    <script>
+      document.querySelectorAll('.open-terminal').forEach(function (el) {
+        el.href = 'http://' + window.location.hostname + ':7681/?arg=' +
+          encodeURIComponent(el.dataset.session);
+      });
+    </script>
+
+    <div class="panel">
+      <form method="post" action="/terminal/new">
+        <label for="session-name">Session name (optional)</label>
+        <input type="text" id="session-name" name="name" placeholder="auto-generated if left blank"
+               pattern="[A-Za-z0-9_-]*">
+        <label for="folder">Folder (relative to /workspace, optional)</label>
+        <input type="text" id="folder" name="folder" list="repo-list" placeholder="/workspace">
+        <datalist id="repo-list">
+          {% for r in repo_names %}
+            <option value="{{ r }}">
+          {% endfor %}
+        </datalist>
+        <div class="btn-row">
+          <button type="submit">New terminal session</button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
 
   <p style="color:#666; font-size:.8rem; margin-top:2rem;">Auto-refreshes every 15s.</p>
 </body>
