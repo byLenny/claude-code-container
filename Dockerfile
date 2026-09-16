@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         supervisor \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
-    && npm install -g @anthropic-ai/claude-code \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Docker CLI only (no daemon) — used only if /var/run/docker.sock is  --
@@ -65,6 +64,28 @@ RUN set -eux; \
 RUN useradd -m -s /bin/bash dev \
     && echo "dev ALL=(ALL) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt" > /etc/sudoers.d/dev-apt \
     && chmod 0440 /etc/sudoers.d/dev-apt
+
+# --- Claude Code CLI — installed as 'dev' into a 'dev'-owned npm prefix --
+# nodesource's npm has no non-root global prefix by default, so a plain
+# `npm install -g` here would land under root-owned system dirs — exactly
+# what makes `claude doctor` report auto-update as blocked and `claude
+# install`/`npm install -g npm` fail with a permission error when run
+# later from inside the running container as 'dev'. Pointing npm's global
+# prefix at dev's own home instead means both claude-code and npm itself
+# can update themselves at runtime with no root/sudo involved.
+#
+# `sudo -u dev claude` (see README/SETUP) resets PATH to sudo's own
+# secure_path, which doesn't include ~dev/.npm-global/bin, so the install
+# below also symlinks the binary into /usr/local/bin — on every relevant
+# PATH/secure_path, so `claude` resolves no matter how dev's shell was
+# reached. That symlink target stays valid across self-updates since npm
+# rewrites the file in place rather than moving it.
+ENV NPM_CONFIG_PREFIX=/home/dev/.npm-global
+ENV PATH="${NPM_CONFIG_PREFIX}/bin:${PATH}"
+RUN mkdir -p "${NPM_CONFIG_PREFIX}" \
+    && chown -R dev:dev "${NPM_CONFIG_PREFIX}" \
+    && su -s /bin/bash -c 'npm install -g @anthropic-ai/claude-code' dev \
+    && ln -sf "${NPM_CONFIG_PREFIX}/bin/claude" /usr/local/bin/claude
 
 # --- SDKMAN + JDKs (17, 21 LTS + current latest) -------------------------
 # Non-LTS Java releases (18-20, 22-24, ...) get pulled from every
