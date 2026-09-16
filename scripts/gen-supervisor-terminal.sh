@@ -29,26 +29,27 @@ if ! [[ "$TTYD_TOKEN" =~ ^[A-Za-z0-9_-]+$ ]]; then
     exit 0
 fi
 
-# `--once` means ttyd tears its shell down on every disconnect and
-# supervisord starts a fresh one for the next connection (see the comment
-# above) -- fine for a one-time login, but it reset any in-progress work
-# every time the tab was closed. Routing through a shared tmux session
-# ("main") fixes that: tmux is a separate daemon that ttyd's connection
-# doesn't own, so it keeps running (and whatever's in it -- shell cwd,
-# running commands, scrollback) across ttyd restarts. `new-session -A`
-# attaches to "main" if it's already there, or creates it on first
-# connect. Note this means the session is shared: whoever connects next
-# (with the same TTYD_TOKEN) picks up exactly where the last person left
-# off, same as any shared tmux session would.
+# Sessions are backed by tmux (see terminal-attach.sh), a separate daemon
+# ttyd's connection doesn't own, so a session keeps running -- and stays
+# reachable by name -- independent of any one ttyd connection. --url-arg
+# lets each connection's URL (?arg=<session>&arg=<folder>, wired up by
+# the dashboard) pick which session terminal-attach.sh attaches to (or
+# creates); no args at all falls back to the original single "main"
+# session in /workspace. Multiple sessions this way means multiple
+# people can genuinely be connected at once (each to their own session,
+# or several to the same one) -- so --once is dropped too; ttyd now runs
+# directly as dev (no su needed, since there's no longer a fixed command
+# that has to run as root first) and spawns terminal-attach.sh fresh per
+# connection.
 cat > "$CONF" <<EOF
 [program:claude-terminal]
-command=/usr/local/bin/ttyd --once --writable -p 7681 -c "dev:${TTYD_TOKEN}" su -s /bin/bash -c "tmux new-session -A -s main" dev
+command=/usr/local/bin/ttyd --url-arg --writable -p 7681 -c "dev:${TTYD_TOKEN}" /opt/scripts/terminal-attach.sh
 directory=/workspace
-user=root
+user=dev
 autostart=true
 autorestart=true
 startretries=1000
-environment=HOME="/root"
+environment=HOME="/home/dev"
 stdout_logfile=${LOG_DIR}/terminal.log
 stderr_logfile=${LOG_DIR}/terminal.log
 stopsignal=INT
@@ -57,7 +58,7 @@ EOF
 echo "    TTYD_TOKEN set — browser terminal enabled at http://<host>:7681"
 echo "    (username 'dev', password is TTYD_TOKEN). This is a full interactive"
 echo "    shell as 'dev' — same access any Claude Code session already has."
-echo "    Each connection joins a shared tmux session ('main'), so closing the"
-echo "    tab preserves whatever was running -- reconnect to pick up where you"
-echo "    left off. Typing 'exit' at the shell prompt (not inside 'claude')"
-echo "    ends that session for good instead of just detaching from it."
+echo "    Each tmux-backed session survives closing the tab -- reconnect (or"
+echo "    open one from the dashboard) to pick up where you left off. Typing"
+echo "    'exit' at the shell prompt (not inside 'claude') ends that session"
+echo "    for good instead of just detaching from it."

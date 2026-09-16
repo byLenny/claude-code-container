@@ -40,9 +40,10 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# --- ttyd — browser terminal used only for the one-time Claude Code login -
-# Gated by TTYD_TOKEN (see scripts/gen-supervisor-login-terminal.sh); only
-# ever runs `claude` for /login, nothing else.
+# --- ttyd — browser-based terminal, gated by TTYD_TOKEN --------------------
+# General-purpose multi-session shell access as 'dev' (see
+# scripts/gen-supervisor-terminal.sh and scripts/terminal-attach.sh), used
+# for the one-time Claude Code login among other things.
 RUN set -eux; \
     case "$(dpkg --print-architecture)" in \
         amd64) TTYD_ARCH=x86_64 ;; \

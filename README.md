@@ -102,6 +102,14 @@ mobile app. The URL is also shown as a link for connecting from a desktop
 browser or the Claude desktop app — both share the same session list since
 it's tied to your account, not the device.
 
+From here you can also start/restart/stop a repo's Remote Control session,
+clone a new repo (equivalent to `clone-repo` — no shell needed), and, if
+the browser terminal is enabled, list/create/close its `tmux` sessions
+(see [Browser terminal](#browser-terminal) below). None of this is behind
+any authentication of its own — the dashboard has no login, so these are
+exactly as protected as the `127.0.0.1` binding actually is (see SETUP.md's
+notes on that binding for the Docker Desktop caveat).
+
 ## Browser terminal
 
 Optional — set `TTYD_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
@@ -114,15 +122,19 @@ a basic-auth login — the username is always `dev` (fixed, not set via
 **This is a real shell as `dev`** — the same access any Claude Code
 session already has (sudo apt-get, whatever `GH_TOKEN` grants, etc.), not
 scoped to anything in particular. `TTYD_TOKEN` is the only thing gating
-it, so treat it like a real password. The underlying connection closes
-after one session and supervisord restarts it fresh for the next — but
-every connection joins the same shared `tmux` session (named `main`), so
-closing the tab doesn't lose anything: reconnect and you're back where
-you left off (cwd, running commands, scrollback). Typing `exit` at the
-shell prompt (not inside `claude` itself) ends that session for good
-instead of just detaching from it. Same rule as the dashboard: it's bound
-to `127.0.0.1`, don't expose it beyond that — though see [SETUP.md's
-notes on what that password does and doesn't protect
+it, so treat it like a real password. Each session is backed by `tmux`,
+which is a separate process the browser connection doesn't own — so
+closing the tab never loses anything, and multiple sessions (and multiple
+people) can be connected concurrently. Opening `http://<host>:7681`
+directly attaches you to a single default session (`main`); the dashboard
+at `http://<host>:8811` lists and creates named sessions, each with its
+own starting folder, and can close them too. Typing `exit` at the shell
+prompt (not inside `claude` itself) ends a session for good instead of
+just detaching from it. There's no per-session access control — anyone
+with `TTYD_TOKEN` can open or close any session, not just ones they
+started. Same rule as the dashboard: it's bound to `127.0.0.1`, don't
+expose it beyond that — though see [SETUP.md's notes on what that
+password does and doesn't protect
 against](SETUP.md#browser-terminal-username-and-what-the-password-doesnt-protect-against)
 before relying on it, especially on Docker Desktop.
 

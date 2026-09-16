@@ -114,12 +114,13 @@ worth knowing what it doesn't cover:
   is what you want; a response means it's reachable from your network) and,
   if it answers, put a firewall rule or a reverse proxy with its own auth in
   front rather than relying on the port binding alone.
-- Only one person can be connected at a time (`ttyd --once` closes the
-  connection after you disconnect), but the token itself doesn't rotate
-  or expire — anyone who has it can connect the moment it's free. And
-  because every connection joins the same shared `tmux` session, the
-  next person in sees whatever the previous one left on screen or
-  running — there's no per-connection isolation.
+- **No per-session isolation.** Multiple people can be connected at once,
+  each to their own `tmux` session (named ones can be created from the
+  dashboard, at `http://<host>:8811`) or to the same one — there's no
+  concept of "your" session vs. someone else's. Anyone with `TTYD_TOKEN`
+  can list, open, or close *any* session, including ones someone else is
+  actively using. The token itself doesn't rotate or expire either —
+  anyone who has it keeps access until you change it and restart.
 
 Once you're signed in at the shell prompt (`dev@claude-dev:~$`), the next
 step is signing in to *Claude Code itself* — that's [step 4](#4-log-in-to-claude-code-one-time-only)
