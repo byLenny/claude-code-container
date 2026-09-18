@@ -23,7 +23,6 @@
     .empty { color: #999; }
     .terminal-banner { background: #1b1b1b; border: 1px solid #333; border-radius: 8px;
       padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .85rem; }
-    .terminal-banner a { color: #8ab4f8; }
     .actions { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
     .actions form { margin: 0; }
     button, .btn { background: #2a2a2a; color: #eee; border: 1px solid #444; border-radius: 6px;
@@ -35,26 +34,20 @@
     .panel input, .panel select { width: 100%; box-sizing: border-box; background: #111; color: #eee;
       border: 1px solid #333; border-radius: 6px; padding: .4rem .5rem; font-size: .85rem; }
     .panel .btn-row { margin-top: 1rem; }
-    .session-row { display: flex; align-items: center; gap: .75rem; background: #1b1b1b; border: 1px solid #333;
-      border-radius: 8px; padding: .6rem 1rem; margin-bottom: .6rem; max-width: 480px; }
+    .session-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; background: #1b1b1b;
+      border: 1px solid #333; border-radius: 8px; padding: .6rem 1rem; margin-bottom: .6rem; max-width: 560px; }
     .session-row .name { font-weight: 600; flex: 1; word-break: break-all; }
     .session-row .meta { font-size: .75rem; color: #888; }
+    .session-row form { margin: 0; }
+    .session-row .rename-form { display: flex; gap: .4rem; }
+    .session-row .rename-form input[type=text] { width: 110px; box-sizing: border-box; background: #111;
+      color: #eee; border: 1px solid #333; border-radius: 6px; padding: .3rem .5rem; font-size: .75rem; }
   </style>
 </head>
 <body>
   <h1>claude-dev — Remote Control sessions</h1>
 
-  {% if terminal_enabled %}
-    <div class="terminal-banner">
-      🔐 <a href="#" id="terminal-link" target="_blank">Open browser terminal</a>
-      — a full shell as <code>dev</code> (same access any Claude Code session already
-      has). Username <code>dev</code>, password is your <code>WEB_TOKEN</code>.
-    </div>
-    <script>
-      document.getElementById('terminal-link').href =
-        'http://' + window.location.hostname + ':7681/';
-    </script>
-  {% else %}
+  {% if not terminal_enabled %}
     <div class="terminal-banner">
       Browser terminal is off (no <code>WEB_TOKEN</code> in <code>.env</code>). Use
       <code>docker exec -it claude-dev sudo -u dev bash</code> instead, or set
@@ -65,8 +58,10 @@
   {% endif %}
 
   {% if not sessions %}
-    <p class="empty">No repo sessions configured yet. Clone one below, or clone a git
-    repo into <code>/workspace</code> yourself and run <code>rescan-repos</code>.</p>
+    <p class="empty">No repo sessions configured yet. Run <code>clone-repo owner/repo</code>
+    from a terminal session (or <code>docker exec -it claude-dev clone-repo owner/repo</code>
+    from the host), or clone a git repo into <code>/workspace</code> yourself and run
+    <code>rescan-repos</code>.</p>
   {% endif %}
 
   <div class="grid">
@@ -96,20 +91,6 @@
     {% endfor %}
   </div>
 
-  <h2>Add a repo</h2>
-  <div class="panel">
-    <form method="post" action="/clone">
-      <label for="source">Repo (owner/repo or URL)</label>
-      <input type="text" id="source" name="source" placeholder="owner/repo" required>
-      <label for="repo-name">Folder name (optional)</label>
-      <input type="text" id="repo-name" name="name" placeholder="defaults to the repo name"
-             pattern="[A-Za-z0-9_.-]*" title="letters, digits, '.', '-', '_' only">
-      <div class="btn-row">
-        <button type="submit">Clone &amp; start session</button>
-      </div>
-    </form>
-  </div>
-
   {% if terminal_enabled %}
     <h2>Terminal sessions</h2>
     {% if not terminal_sessions %}
@@ -119,6 +100,11 @@
       <div class="session-row">
         <span class="name">{{ t.name }}</span>
         <span class="meta">{{ t.windows }} window{{ '' if t.windows == '1' else 's' }}{{ ' · attached' if t.attached else '' }}</span>
+        <form method="post" action="/terminal/{{ t.name }}/rename" class="rename-form">
+          <input type="text" name="new_name" placeholder="rename…" pattern="[A-Za-z0-9_-]*"
+                 title="letters, digits, '-', '_' only" aria-label="Rename {{ t.name }}">
+          <button type="submit" class="btn">Rename</button>
+        </form>
         <a class="btn open-terminal" data-session="{{ t.name }}" href="#" target="_blank">Open</a>
         <form method="post" action="/terminal/{{ t.name }}/close"
               onsubmit="return confirm('End terminal session {{ t.name }}? Anything running in it will be killed.');">

@@ -76,7 +76,7 @@ While you're in there, also pick a password for the browser terminal
 (step 4 uses it for login, but it's a full shell — see [Browser
 terminal](README.md#browser-terminal) in the README) — letters, digits,
 `-` and `_` only. This same password also becomes the login for the web
-dashboard (step 6), since it can clone repos and start/stop sessions:
+dashboard (step 6), since it can start/stop sessions and manage terminals:
 
 ```
 WEB_TOKEN=some-password-you-pick
@@ -101,9 +101,9 @@ it's shared between both: the same login works on either one.
 That password is the *only* thing gating a full, unscoped shell (sudo
 apt-get, whatever `GH_TOKEN` grants, etc. — see
 [Browser terminal](README.md#browser-terminal) in the README) *and* the
-dashboard's controls (clone a repo, start/stop/restart sessions — see
-[Web dashboard](README.md#web-dashboard)), so it's worth knowing what it
-doesn't cover:
+dashboard's controls (start/stop/restart repo sessions, create/rename/close
+terminal sessions — see [Web dashboard](README.md#web-dashboard)), so it's
+worth knowing what it doesn't cover:
 
 - **No TLS.** It's plain HTTP Basic Auth, so the username/password go over
   the network in the clear on every request unless you put a reverse proxy
@@ -129,9 +129,9 @@ doesn't cover:
   each to their own `tmux` session (named ones can be created from the
   dashboard, at `http://<host>:8811`) or to the same one — there's no
   concept of "your" session vs. someone else's. Anyone with `WEB_TOKEN`
-  can list, open, or close *any* session, including ones someone else is
-  actively using. The token itself doesn't rotate or expire either —
-  anyone who has it keeps access until you change it and restart.
+  can list, open, rename, or close *any* session, including ones someone
+  else is actively using. The token itself doesn't rotate or expire
+  either — anyone who has it keeps access until you change it and restart.
 
 Once you're signed in at the shell prompt (`dev@claude-dev:~$`), the next
 step is signing in to *Claude Code itself* — that's [step 4](#4-log-in-to-claude-code-one-time-only)
@@ -220,6 +220,11 @@ docker exec -it claude-dev rescan-repos
 ```
 
 Either way, each repo now has its own always-on Claude Code session.
+
+(Already inside a browser terminal session or `docker exec ... bash`
+instead? Drop the `docker exec -it claude-dev` prefix and just run
+`list-repos`/`clone-repo owner/repo-name` directly — same commands,
+you're already `dev` inside the container.)
 
 ## 6. Connect from the Claude app
 

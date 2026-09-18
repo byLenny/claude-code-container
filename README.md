@@ -103,16 +103,16 @@ browser or the Claude desktop app — both share the same session list since
 it's tied to your account, not the device.
 
 From here you can also start/restart/stop a repo's Remote Control session,
-clone a new repo (equivalent to `clone-repo` — no shell needed), and, if
-the browser terminal is enabled, list/create/close its `tmux` sessions
-(see [Browser terminal](#browser-terminal) below). Because it can do all
-that, it requires the same `WEB_TOKEN` login as the terminal (HTTP Basic
-Auth, username `dev`) whenever one is set. Leaving `WEB_TOKEN` unset
-disables the terminal *and* leaves the dashboard unauthenticated — at
-that point it's only as protected as the `127.0.0.1` binding actually is
-(see SETUP.md's notes on that binding for the Docker Desktop caveat), so
-setting a token is worth doing even if you don't plan to use the terminal
-itself.
+and, if the browser terminal is enabled, list/create/rename/close its
+`tmux` sessions (see [Browser terminal](#browser-terminal) below) —
+cloning a new repo is a terminal-session job now (`clone-repo owner/repo`),
+not a dashboard one. Because it can do all that, it requires the same
+`WEB_TOKEN` login as the terminal (HTTP Basic Auth, username `dev`)
+whenever one is set. Leaving `WEB_TOKEN` unset disables the terminal *and*
+leaves the dashboard unauthenticated — at that point it's only as
+protected as the `127.0.0.1` binding actually is (see SETUP.md's notes on
+that binding for the Docker Desktop caveat), so setting a token is worth
+doing even if you don't plan to use the terminal itself.
 
 ## Browser terminal
 
@@ -120,7 +120,7 @@ Optional — set `WEB_TOKEN` in `.env` (letters, digits, `-`, `_` only) and
 restart to enable a full interactive terminal at `http://<host>:7681`, as
 an alternative to `docker exec`. The same token also becomes the [web
 dashboard](#web-dashboard)'s login, since it can start/stop sessions and
-clone repos, not just view them. `WEB_TOKEN` is only the password half of
+manage terminals, not just view them. `WEB_TOKEN` is only the password half of
 a basic-auth login — the username is always `dev` (fixed, not set via
 `.env`); when the browser prompts, put `dev` in the username field and
 `WEB_TOKEN`'s value in the password field. (Formerly `TTYD_TOKEN` — that
@@ -136,7 +136,7 @@ closing the tab never loses anything, and multiple sessions (and multiple
 people) can be connected concurrently. Opening `http://<host>:7681`
 directly attaches you to a single default session (`main`); the dashboard
 at `http://<host>:8811` lists and creates named sessions, each with its
-own starting folder, and can close them too. Typing `exit` at the shell
+own starting folder, and can rename or close them too. Typing `exit` at the shell
 prompt (not inside `claude` itself) ends a session for good instead of
 just detaching from it. There's no per-session access control — anyone
 with `WEB_TOKEN` can open or close any session, not just ones they
