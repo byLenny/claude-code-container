@@ -29,6 +29,7 @@
       padding: .3rem .6rem; font-size: .75rem; cursor: pointer; text-decoration: none; display: inline-block; }
     button:hover, .btn:hover { background: #353535; }
     button.danger:hover { background: #4d1f1f; border-color: #6b2c2c; }
+    button:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
     .panel { background: #1b1b1b; border: 1px solid #333; border-radius: 10px; padding: 1rem 1.25rem; max-width: 480px; }
     .panel label { display: block; font-size: .8rem; color: #aaa; margin: .6rem 0 .25rem; }
     .panel input, .panel select { width: 100%; box-sizing: border-box; background: #111; color: #eee;
@@ -77,14 +78,15 @@
         {% endif %}
         <div class="actions">
           <form method="post" action="/session/{{ s.repo }}/start">
-            <button type="submit">Start</button>
+            <button type="submit" {{ 'disabled' if s.status in ('RUNNING', 'STARTING') else '' }}>Start</button>
           </form>
           <form method="post" action="/session/{{ s.repo }}/restart">
             <button type="submit">Restart</button>
           </form>
           <form method="post" action="/session/{{ s.repo }}/stop"
                 onsubmit="return confirm('Stop the {{ s.repo }} session?');">
-            <button type="submit" class="danger">Stop</button>
+            <button type="submit" class="danger"
+                    {{ 'disabled' if s.status in ('STOPPED', 'EXITED', 'FATAL', 'BACKOFF') else '' }}>Stop</button>
           </form>
           <form method="post" action="/session/{{ s.repo }}/remove"
                 onsubmit="return confirm('Remove {{ s.repo }} from this list? Stops its session and hides it here -- the ./workspace/{{ s.repo }} folder is left untouched. Edit workspace/.devtools/removed-repos.txt to bring it back.');">
