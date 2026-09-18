@@ -93,6 +93,22 @@ or just restart the container. Either way, each repo gets its own `claude
 remote-control --spawn worktree --name <repo>` session, supervised and
 auto-restarted if it crashes or the network drops for a while.
 
+## Removing repos
+
+The dashboard's "Remove" button on a repo's card stops its session and
+hides it from the list — it does **not** touch `./workspace/<repo>`,
+since that'd mean deleting the checkout (and any uncommitted work in it)
+permanently. Under the hood it appends the name to
+`workspace/.devtools/packages.txt`'s sibling,
+`workspace/.devtools/removed-repos.txt` (one name per line), which
+`gen-supervisor-repos.sh` skips from then on.
+
+That file is plain text and meant to be edited directly: delete a line
+(or the whole file) and run `rescan-repos` to bring a repo back. Without
+that, the repo's folder still exists with its `.git` intact, so it *would*
+otherwise just come back on the next `rescan-repos` or container restart
+— the file is what makes "removed" stick.
+
 ## Web dashboard
 
 Open `http://<host>:8811` (bound to `127.0.0.1` in the compose file on
@@ -102,11 +118,13 @@ mobile app. The URL is also shown as a link for connecting from a desktop
 browser or the Claude desktop app — both share the same session list since
 it's tied to your account, not the device.
 
-From here you can also start/restart/stop a repo's Remote Control session,
-and, if the browser terminal is enabled, list/create/rename/close its
-`tmux` sessions (see [Browser terminal](#browser-terminal) below) —
-cloning a new repo is a terminal-session job now (`clone-repo owner/repo`),
-not a dashboard one. Because it can do all that, it requires the same
+From here you can also start/restart/stop/remove a repo's Remote Control
+session (see [Removing repos](#removing-repos) above for what "remove"
+does and doesn't do), and, if the browser terminal is enabled,
+list/create/rename/close its `tmux` sessions (see [Browser
+terminal](#browser-terminal) below) — cloning a new repo is a
+terminal-session job now (`clone-repo owner/repo`), not a dashboard one.
+Because it can do all that, it requires the same
 `WEB_TOKEN` login as the terminal (HTTP Basic Auth, username `dev`)
 whenever one is set. Leaving `WEB_TOKEN` unset disables the terminal *and*
 leaves the dashboard unauthenticated — at that point it's only as

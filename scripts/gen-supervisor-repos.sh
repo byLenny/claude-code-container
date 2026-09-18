@@ -8,8 +8,16 @@ WORKSPACE=/workspace
 GENERATED_DIR=/etc/supervisor/generated
 CLAUDE_HOME=/home/dev/.claude
 LOG_DIR=/var/log/claude-sessions
+# Repos listed here (one name per line, see removed-repos.txt) get a
+# folder left alone on disk but no supervisor program -- this is how the
+# dashboard's "Remove" button (which never deletes files) stays durable
+# across a rescan/restart instead of the repo's still-existing .git dir
+# just resurrecting the session immediately. Edit the file directly to
+# bring a repo back.
+REMOVED_FILE="$WORKSPACE/.devtools/removed-repos.txt"
 
-mkdir -p "$GENERATED_DIR" "$LOG_DIR"
+mkdir -p "$GENERATED_DIR" "$LOG_DIR" "$(dirname "$REMOVED_FILE")"
+touch "$REMOVED_FILE"
 
 AUTHENTICATED=0
 if find "$CLAUDE_HOME" -maxdepth 1 -iname '*credential*' -o -iname '*.session*' 2>/dev/null | grep -q .; then
@@ -31,6 +39,10 @@ for dir in "$WORKSPACE"/*/; do
     if [ "$repo" = "terminal" ]; then
         echo "  ! skipping repo named 'terminal' — that name is reserved for" \
              "the browser terminal's own supervisor program"
+        continue
+    fi
+    if grep -qxF "$repo" "$REMOVED_FILE"; then
+        echo "  - ${repo} (removed — edit $REMOVED_FILE to bring it back)"
         continue
     fi
 

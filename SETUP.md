@@ -101,9 +101,10 @@ it's shared between both: the same login works on either one.
 That password is the *only* thing gating a full, unscoped shell (sudo
 apt-get, whatever `GH_TOKEN` grants, etc. — see
 [Browser terminal](README.md#browser-terminal) in the README) *and* the
-dashboard's controls (start/stop/restart repo sessions, create/rename/close
-terminal sessions — see [Web dashboard](README.md#web-dashboard)), so it's
-worth knowing what it doesn't cover:
+dashboard's controls (start/stop/restart/remove repo sessions,
+create/rename/close terminal sessions — see
+[Web dashboard](README.md#web-dashboard)), so it's worth knowing what it
+doesn't cover:
 
 - **No TLS.** It's plain HTTP Basic Auth, so the username/password go over
   the network in the clear on every request unless you put a reverse proxy
@@ -298,6 +299,12 @@ Remove the repo folder if it's still there, then
 `docker exec -it claude-dev rescan-repos` to regenerate sessions from what's
 actually in `/workspace` now. The old session's log file is left behind in
 `/var/log/claude-sessions/` but stops being reused.
+
+**I clicked "Remove" on a repo in the dashboard and want it back.**
+That doesn't delete anything — it just adds the repo's name to
+`workspace/.devtools/removed-repos.txt`. Delete that line (or the whole
+file) and run `docker exec -it claude-dev rescan-repos`, or from inside a
+terminal session just `rescan-repos`, to bring it back.
 
 **I want to start over completely.**
 `docker compose down -v` removes the container *and* its volumes (including

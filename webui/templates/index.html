@@ -86,6 +86,10 @@
                 onsubmit="return confirm('Stop the {{ s.repo }} session?');">
             <button type="submit" class="danger">Stop</button>
           </form>
+          <form method="post" action="/session/{{ s.repo }}/remove"
+                onsubmit="return confirm('Remove {{ s.repo }} from this list? Stops its session and hides it here -- the ./workspace/{{ s.repo }} folder is left untouched. Edit workspace/.devtools/removed-repos.txt to bring it back.');">
+            <button type="submit" class="danger">Remove</button>
+          </form>
         </div>
       </div>
     {% endfor %}

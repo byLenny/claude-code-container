@@ -12,6 +12,14 @@ Small dashboard for the claude-dev container.
   (:7681) -- creating, renaming, and closing them here works the same as
   doing it from a shell; opening one in the browser attaches to whatever's
   already running, same as reconnecting to one you started there.
+- "Removing" a repo session stops it and adds it to
+  workspace/.devtools/removed-repos.txt so gen-supervisor-repos.sh skips
+  it from then on -- the repo folder itself is never touched. This process
+  runs as 'dev' with no sudo rights beyond apt-get/apt (see Dockerfile),
+  so applying that change goes through gen-supervisor-repos.sh (needs no
+  root -- it only touches dev-owned paths) plus supervisord's XML-RPC
+  reloadConfig/removeProcessGroup, the RPC equivalent of `supervisorctl
+  reread && update`.
 - Requires the same WEB_TOKEN as the browser terminal (HTTP Basic Auth,
   username 'dev') whenever one is set -- this page can start/stop repo
   sessions and manage terminal sessions, not just view them, so it needs
@@ -54,6 +62,8 @@ def require_auth():
 SUPERVISOR_RPC = "http://127.0.0.1:9001/RPC2"
 LOG_DIR = Path("/var/log/claude-sessions")
 WORKSPACE = Path("/workspace")
+SCRIPTS_DIR = Path("/opt/scripts")
+REMOVED_REPOS_FILE = WORKSPACE / ".devtools" / "removed-repos.txt"
 
 # claude remote-control prints a claude.ai/code session link on startup
 URL_RE = re.compile(r"https://claude\.ai/code/\S+")
@@ -82,6 +92,42 @@ def supervisor_call(method: str, *args) -> bool:
         return True
     except Exception:  # noqa: BLE001 -- see docstring
         return False
+
+
+def mark_repo_removed(repo: str) -> None:
+    """Add repo to removed-repos.txt (deduplicated) so
+    gen-supervisor-repos.sh skips it on every future run -- durable across
+    rescan-repos and container restarts, unlike just deleting its conf
+    file once. The repo's folder is never touched; edit the file directly
+    to bring one back."""
+    REMOVED_REPOS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    existing = set()
+    if REMOVED_REPOS_FILE.exists():
+        existing = {line.strip() for line in REMOVED_REPOS_FILE.read_text().splitlines() if line.strip()}
+    existing.add(repo)
+    REMOVED_REPOS_FILE.write_text("".join(f"{name}\n" for name in sorted(existing)))
+
+
+def refresh_repo_programs() -> None:
+    """Regenerate claude-<repo> supervisor programs to match current
+    /workspace contents and removed-repos.txt, then tell supervisord to
+    pick up the change. 'dev' has no sudo rights to run supervisorctl
+    itself (only apt-get/apt -- see Dockerfile), so this uses the XML-RPC
+    equivalent of `supervisorctl reread && update` instead."""
+    subprocess.run(["bash", str(SCRIPTS_DIR / "gen-supervisor-repos.sh")], check=False)
+    try:
+        server = xmlrpc.client.ServerProxy(SUPERVISOR_RPC)
+        added, _changed, removed = server.supervisor.reloadConfig()[0]
+        for group in removed:
+            try:
+                server.supervisor.stopProcessGroup(group)
+            except xmlrpc.client.Fault:
+                pass
+            server.supervisor.removeProcessGroup(group)
+        for group in added:
+            server.supervisor.addProcessGroup(group)
+    except Exception:  # noqa: BLE001, S110 -- best-effort; the page re-polls real status anyway
+        pass
 
 
 def find_session_url(repo: str) -> str | None:
@@ -197,6 +243,17 @@ def control_session(repo: str, action: str):
     elif action == "restart":
         supervisor_call("stopProcess", name)
         supervisor_call("startProcess", name)
+    return redirect(url_for("index"))
+
+
+@app.route("/session/<repo>/remove", methods=["POST"])
+def remove_session(repo: str):
+    # Only ever act on a name that's actually a workspace repo right now --
+    # keeps this from being pointed at an arbitrary string.
+    if repo in list_workspace_repos():
+        supervisor_call("stopProcess", f"claude-{repo}")
+        mark_repo_removed(repo)
+        refresh_repo_programs()
     return redirect(url_for("index"))
 
 
